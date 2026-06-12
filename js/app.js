@@ -135,6 +135,7 @@ function initializeApplication() {
     }
 
     setupCommandPalette();
+    setupWhatsOnPlate();
 
     // Initialize reset button
     const resetBtn = document.getElementById('btn-reset-app');
@@ -288,12 +289,31 @@ function setupModalHandlers() {
                 return;
             }
 
+            // Extract daily summary and point of action
+            const typedLog = document.getElementById('form-progress-log').value.trim();
+            let latestLog = '';
+            if (taskId) {
+                const taskObj = store.getTaskById(taskId);
+                if (taskObj && taskObj.history && taskObj.history.length > 0) {
+                    const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
+                    if (logs.length > 0) {
+                        latestLog = logs[logs.length - 1].message;
+                    }
+                }
+            }
+            const latestLogVal = typedLog || latestLog || desc || '';
+
+            const dmNextAction = document.getElementById('dm-next-action');
+            const pointOfAction = (dmNextAction && dmNextAction.value.trim()) || 'Follow-up';
+
             // Standardize temporary task object to pass to exporter
             downloadICS({
                 id: taskId || 'new',
                 title: title || 'Follow up task',
                 description: desc || '',
-                followupDate: followupDate
+                followupDate: followupDate,
+                latestLog: latestLogVal,
+                pointOfAction: pointOfAction
             });
         });
     }
@@ -311,11 +331,30 @@ function setupModalHandlers() {
                 return;
             }
 
+            // Extract daily summary and point of action
+            const typedLog = document.getElementById('form-progress-log').value.trim();
+            let latestLog = '';
+            if (taskId) {
+                const taskObj = store.getTaskById(taskId);
+                if (taskObj && taskObj.history && taskObj.history.length > 0) {
+                    const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
+                    if (logs.length > 0) {
+                        latestLog = logs[logs.length - 1].message;
+                    }
+                }
+            }
+            const latestLogVal = typedLog || latestLog || desc || '';
+
+            const dmNextAction = document.getElementById('dm-next-action');
+            const pointOfAction = (dmNextAction && dmNextAction.value.trim()) || 'Follow-up';
+
             const url = getGoogleCalendarLink({
                 id: taskId || 'new',
                 title: title || 'Follow up task',
                 description: desc || '',
-                followupDate: followupDate
+                followupDate: followupDate,
+                latestLog: latestLogVal,
+                pointOfAction: pointOfAction
             });
             if (url) {
                 window.open(url, '_blank');
@@ -424,12 +463,7 @@ export function openTaskModal(taskId = null) {
         // Populate history timeline
         const timeline = document.getElementById('task-history-timeline');
         if (timeline && task.history) {
-            timeline.innerHTML = task.history.map(item => `
-                <div class="timeline-item">
-                    <div class="timeline-item-meta">${item.timestamp} • By: ${item.user}</div>
-                    <div>${item.message}</div>
-                </div>
-            `).reverse().join('');
+            timeline.innerHTML = renderStoryTimeline(task.history);
         }
     } else {
         // Add Mode
@@ -1198,5 +1232,213 @@ function setupCommandPalette() {
 
         // Force re-renders
         window.dispatchEvent(new CustomEvent('store-updated'));
+    }
+
+    function renderStoryTimeline(history) {
+        if (!history || history.length === 0) return '<div class="empty-state">No history recorded yet.</div>';
+
+        // Group items by date
+        const groups = {};
+        history.forEach(item => {
+            const parts = item.timestamp.split(' ');
+            const dateStr = parts[0] || 'Unknown Date';
+            const timeStr = parts.slice(1).join(' ') || '';
+
+            const displayDate = formatHistoryDate(dateStr);
+
+            if (!groups[displayDate]) {
+                groups[displayDate] = [];
+            }
+            groups[displayDate].push({ time: timeStr, user: item.user, message: item.message });
+        });
+
+        const sortedDates = Object.keys(groups).reverse();
+
+        return sortedDates.map(date => {
+            const items = groups[date].reverse();
+            const itemsHTML = items.map(it => `
+                <div class="timeline-story-bullet">
+                    <span class="timeline-story-time">${it.time}</span>
+                    <span style="font-weight: 600; color: var(--color-primary);">${it.user}:</span>
+                    <span style="color: var(--text-main);">${it.message}</span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="timeline-group">
+                    <div class="timeline-date-header">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span>
+                        <span>${date}</span>
+                    </div>
+                    <div class="timeline-group-items">
+                        ${itemsHTML}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function formatHistoryDate(dateStr) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            const date = new Date(year, month - 1, day);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+        }
+        return dateStr;
+    }
+
+    function setupWhatsOnPlate() {
+        const triggerBtn = document.getElementById('btn-whats-on-plate');
+        const modal = document.getElementById('whats-on-plate-modal');
+        const closeBtn = document.getElementById('whats-on-plate-modal-close');
+        const listContainer = document.getElementById('whats-on-plate-list');
+
+        if (!triggerBtn || !modal || !closeBtn || !listContainer) return;
+
+        triggerBtn.addEventListener('click', () => {
+            renderWhatsOnPlate();
+            modal.classList.remove('hidden');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        function renderWhatsOnPlate() {
+            const todayStr = getRelativeDate(0);
+            const tasks = store.getAllTasks();
+
+            // Active tasks scheduled for today or overdue
+            const plateTasks = tasks.filter(t => {
+                if (t.status === 'completed') return false;
+                
+                const dateVal = t.followupDate || t.deadline || t.bniDeadline;
+                return dateVal && dateVal <= todayStr;
+            });
+
+            if (plateTasks.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state" style="padding: 32px; text-align: center;">
+                        <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-success); margin-bottom: 12px; display: block;">check_circle</span>
+                        <span style="font-size: 14px; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 4px;">Plate is clean!</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">No follow-ups or deadlines are due today. Enjoy your day!</span>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = plateTasks.map(t => {
+                const project = store.getProjectById(t.projectType);
+                const projLabel = project ? project.name : 'Task';
+                const priorityColor = t.priority === 'high' ? 'danger' : t.priority === 'medium' ? 'warning' : 'success';
+                const isOverdue = (t.followupDate || t.deadline || t.bniDeadline) < todayStr;
+                const dateBadge = isOverdue 
+                    ? `<span class="badge danger" style="font-size: 9px; padding: 2px 6px;">Overdue</span>` 
+                    : `<span class="badge warning" style="font-size: 9px; padding: 2px 6px;">Today</span>`;
+
+                return `
+                    <div class="plate-task-item" data-task-id="${t.id}">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                            <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1;">
+                                <input type="checkbox" class="plate-task-checkbox" data-task-id="${t.id}" style="margin-top: 2px;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span class="plate-task-title" data-task-id="${t.id}">${t.title}</span>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span class="badge info" style="font-size: 8px; font-weight: 500;">${projLabel}</span>
+                                        <span class="badge ${priorityColor}" style="font-size: 8px;">${t.priority}</span>
+                                        ${dateBadge}
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-icon btn-sm btn-reschedule-trigger" title="Postpone Task" style="padding: 4px; border-radius: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">edit_calendar</span>
+                            </button>
+                        </div>
+                        <div class="reschedule-wrapper hidden">
+                            <input type="date" class="form-control reschedule-date-input" value="${todayStr}" style="padding: 4px 8px; font-size: 11px; height: 28px; flex: 1;">
+                            <button class="btn btn-primary btn-sm btn-reschedule-save" data-task-id="${t.id}" style="font-size: 11px; padding: 4px 8px; height: 28px; font-weight: 600;">Save</button>
+                            <button class="btn btn-secondary btn-sm btn-reschedule-cancel" style="font-size: 11px; padding: 4px 8px; height: 28px;">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Checkbox completion logic
+            listContainer.querySelectorAll('.plate-task-checkbox').forEach(chk => {
+                chk.addEventListener('change', () => {
+                    const taskId = chk.dataset.taskId;
+                    const titleSpan = listContainer.querySelector(`.plate-task-title[data-task-id="${taskId}"]`);
+                    if (titleSpan) {
+                        titleSpan.classList.add('completed');
+                    }
+
+                    setTimeout(() => {
+                        const task = store.getTaskById(taskId);
+                        if (task) {
+                            const updatedData = { ...task, status: 'completed' };
+                            updatedData.progressLog = "Marked completed via 'What's on my Plate Today' checklist.";
+                            store.saveTask(updatedData);
+                            renderWhatsOnPlate();
+                        }
+                    }, 800);
+                });
+            });
+
+            // Reschedule actions
+            listContainer.querySelectorAll('.plate-task-item').forEach(item => {
+                const trigger = item.querySelector('.btn-reschedule-trigger');
+                const wrapper = item.querySelector('.reschedule-wrapper');
+                const cancelBtn = item.querySelector('.btn-reschedule-cancel');
+                const saveBtn = item.querySelector('.btn-reschedule-save');
+                const dateInput = item.querySelector('.reschedule-date-input');
+
+                if (trigger && wrapper && cancelBtn && saveBtn && dateInput) {
+                    trigger.addEventListener('click', () => {
+                        wrapper.classList.toggle('hidden');
+                    });
+
+                    cancelBtn.addEventListener('click', () => {
+                        wrapper.classList.add('hidden');
+                    });
+
+                    saveBtn.addEventListener('click', () => {
+                        const taskId = saveBtn.dataset.taskId;
+                        const newDate = dateInput.value;
+                        if (!newDate) {
+                            alert('Please choose a valid date.');
+                            return;
+                        }
+
+                        const task = store.getTaskById(taskId);
+                        if (task) {
+                            const updatedData = { ...task };
+                            const project = store.getProjectById(task.projectType);
+                            const template = project ? project.templateType : task.projectType;
+
+                            if (template === 'bni-tasks') {
+                                updatedData.bniDeadline = newDate;
+                            } else {
+                                updatedData.followupDate = newDate;
+                            }
+
+                            updatedData.progressLog = `Postponed task follow-up date to ${newDate}.`;
+                            store.saveTask(updatedData);
+                            renderWhatsOnPlate();
+                        }
+                    });
+                }
+            });
+        }
     }
 }

@@ -182,15 +182,28 @@ function renderCalendar(onOpenTaskModal) {
 
 // RFC 5545 calendar invite exporter
 export function downloadICS(task) {
-    const title = task.title;
-    const desc = task.description || '';
     const dateStr = task.followupDate || task.deadline || task.bniDeadline;
     if (!dateStr) return;
+
+    // Build title based on daily summary and point of action
+    let eventTitle = `Follow-up: ${task.title}`;
+    if (task.latestLog) {
+        eventTitle += ` - ${task.latestLog}`;
+    }
+    if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
+        eventTitle += ` (Action: ${task.pointOfAction})`;
+    }
+
+    if (eventTitle.length > 200) {
+        eventTitle = eventTitle.substring(0, 197) + '...';
+    }
+
+    const desc = task.description || '';
 
     // Convert YYYY-MM-DD to YYYYMMDD
     const datePart = dateStr.replace(/-/g, '');
     const start = `${datePart}T090000`; // 9:00 AM local
-    const end = `${datePart}T100000`;   // 10:00 AM local
+    const end = `${datePart}T090000`;   // 9:00 AM local (0-minute duration)
 
     const icsContent = [
         'BEGIN:VCALENDAR',
@@ -201,7 +214,7 @@ export function downloadICS(task) {
         `DTSTAMP:${datePart}T000000Z`,
         `DTSTART:${start}`,
         `DTEND:${end}`,
-        `SUMMARY:${title}`,
+        `SUMMARY:${eventTitle}`,
         `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
         'STATUS:CONFIRMED',
         'END:VEVENT',
@@ -219,16 +232,29 @@ export function downloadICS(task) {
 
 // Generates Google Calendar web integration URL
 export function getGoogleCalendarLink(task) {
-    const title = task.title;
-    const desc = task.description || '';
     const dateStr = task.followupDate || task.deadline || task.bniDeadline;
     if (!dateStr) return '';
+
+    // Build title based on daily summary and point of action
+    let eventTitle = `Follow-up: ${task.title}`;
+    if (task.latestLog) {
+        eventTitle += ` - ${task.latestLog}`;
+    }
+    if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
+        eventTitle += ` (Action: ${task.pointOfAction})`;
+    }
+
+    if (eventTitle.length > 200) {
+        eventTitle = eventTitle.substring(0, 197) + '...';
+    }
+
+    const desc = task.description || '';
 
     // Convert YYYY-MM-DD to YYYYMMDD
     const datePart = dateStr.replace(/-/g, '');
     const start = `${datePart}T090000`; // 9:00 AM local
-    const end = `${datePart}T100000`;   // 10:00 AM local
+    const end = `${datePart}T090000`;   // 9:00 AM local (0-minute duration)
 
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Follow-up: ' + title)}&dates=${start}/${end}&details=${encodeURIComponent(desc)}&sf=true&output=xml`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${start}/${end}&details=${encodeURIComponent(desc)}&sf=true&output=xml`;
 }
 

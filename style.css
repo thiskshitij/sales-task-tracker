@@ -1324,31 +1324,125 @@ input, select, textarea, button {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: 150px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
-.timeline-item {
+.timeline-group {
+    margin-bottom: 12px;
+}
+
+.timeline-date-header {
     font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     position: relative;
     padding-left: 14px;
-    border-left: 2px solid rgba(255, 255, 255, 0.05);
 }
 
-.timeline-item::after {
+.timeline-date-header::before {
     content: '';
     position: absolute;
-    left: -5px;
-    top: 3px;
-    width: 8px;
-    height: 8px;
+    left: -4px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2px solid var(--bg-main);
+    box-shadow: 0 0 8px rgba(88, 166, 255, 0.5);
+    z-index: 2;
+}
+
+.timeline-group-items {
+    border-left: 2px dashed rgba(255, 255, 255, 0.08);
+    margin-left: 5px;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.timeline-story-bullet {
+    font-size: 11px;
+    line-height: 1.4;
+    position: relative;
+}
+
+.timeline-story-bullet::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--text-muted);
 }
 
-.timeline-item-meta {
+.timeline-story-time {
+    font-weight: 600;
     color: var(--text-muted);
     font-size: 10px;
-    margin-bottom: 2px;
+    margin-right: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+/* What's on My Plate checklist styles */
+.plate-task-item {
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.01);
+    transition: all var(--transition-fast) ease;
+}
+
+.plate-task-item:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.plate-task-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-success);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.plate-task-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    transition: all 0.3s ease;
+}
+
+.plate-task-title.completed {
+    text-decoration: line-through;
+    color: var(--text-muted) !important;
+    opacity: 0.5;
+}
+
+.reschedule-wrapper {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-glass);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .form-actions {
