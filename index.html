@@ -50,8 +50,13 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="brand">
-                <span class="material-symbols-outlined logo-icon">blur_on</span>
-                <h2>SalesFlow</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="material-symbols-outlined logo-icon">blur_on</span>
+                    <h2>SalesFlow</h2>
+                </div>
+                <button class="btn btn-secondary btn-icon" id="btn-manage-projects" title="Manage Projects & Workspaces" style="padding: 6px; border-radius: 10px; border: 1px solid var(--border-glass); background: transparent; height: 32px; width: 32px; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">settings</span>
+                </button>
             </div>
             
             <nav class="sidebar-nav">
@@ -78,6 +83,10 @@
             </nav>
 
             <div class="sidebar-footer">
+                <div class="time-widget-sidebar" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid var(--border-glass); margin-bottom: 12px; font-size: 11px; color: var(--text-muted);">
+                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-primary);">schedule</span>
+                    <span id="live-time">12 Jun 2026, 05:08 PM</span>
+                </div>
                 <div class="quick-stats-mini">
                     <div class="stat-mini">
                         <span class="label">Today's Follow-ups</span>
@@ -99,31 +108,24 @@
         <main class="main-content">
             <!-- Top Header -->
             <header class="top-header">
-                <div class="header-left" style="display: flex; align-items: center;">
+                <div class="header-left">
                     <div class="project-selector-wrapper">
                         <span class="material-symbols-outlined filter-icon">filter_alt</span>
                         <select id="global-project-filter">
                             <!-- Dynamic projects options -->
                         </select>
                     </div>
-                    <button class="btn btn-secondary btn-icon" id="btn-manage-projects" title="Manage Projects & Workspaces" style="padding: 6px; border-radius: 12px; margin-left: 8px;">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
-                    </button>
-                    <div class="header-search-wrapper" style="position: relative; display: flex; align-items: center; margin-left: 12px; width: 220px;">
-                        <span class="material-symbols-outlined" style="position: absolute; left: 10px; color: var(--text-muted); font-size: 18px; pointer-events: none;">search</span>
-                        <input type="text" id="global-search" placeholder="Filter tasks / leads..." style="width: 100%; padding: 6px 12px 6px 34px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; font-size: 12px; outline: none; transition: var(--transition-fast);">
+                </div>
+                
+                <div class="header-center">
+                    <div class="header-search-container">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input type="text" id="global-search" placeholder="Search tasks, leads, or type commands...">
+                        <button id="btn-global-search-trigger" class="search-badge" title="Command Search (Cmd+K)">⌘K</button>
                     </div>
                 </div>
-                <div class="header-right">
-                    <div class="time-widget">
-                        <span class="material-symbols-outlined">schedule</span>
-                        <span id="live-time">12 Jun 2026, 05:08 PM</span>
-                    </div>
-                    
-                    <button class="btn btn-secondary btn-icon" id="btn-global-search-trigger" title="Command Search (Cmd+K)" style="padding: 6px; border-radius: 12px; margin-right: 8px; display: flex; align-items: center; justify-content: center; height: 34px; width: 34px;">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">search</span>
-                    </button>
 
+                <div class="header-right">
                     <button class="notification-trigger" id="notif-btn">
                         <span class="material-symbols-outlined">notifications</span>
                         <span class="badge hidden" id="notif-badge">0</span>

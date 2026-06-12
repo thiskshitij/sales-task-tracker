@@ -95,8 +95,9 @@ input, select, textarea, button {
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
     padding: 0 12px 32px 12px;
+    width: 100%;
 }
 
 .brand h2 {
@@ -225,10 +226,83 @@ input, select, textarea, button {
     font-size: 14px;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 420px;
+    margin: 0 24px;
+}
+
 .header-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+}
+
+.header-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.header-search-container .search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+    font-size: 18px;
+    pointer-events: none;
+}
+
+.header-search-container input {
+    width: 100%;
+    padding: 8px 50px 8px 38px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    font-size: 13px;
+    outline: none;
+    transition: var(--transition-fast);
+    color: var(--text-main);
+}
+
+.header-search-container input:focus {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+}
+
+.header-search-container .search-badge {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    height: auto;
+    width: auto;
+}
+
+.header-search-container .search-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-primary);
 }
 
 .time-widget {
@@ -1645,13 +1719,4 @@ input, select, textarea, button {
     color: var(--text-muted);
 }
 
-/* Global Search Input Sleek Focus Style */
-#global-search {
-    color: var(--text-main);
-}
-#global-search:focus {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
-}
 
