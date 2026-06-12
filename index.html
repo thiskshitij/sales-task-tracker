@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Task Tracker & CRM</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS (xlsx) Excel parser library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="material-symbols-outlined logo-icon">blur_on</span>
+                <h2>SalesFlow</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="dashboard">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="board">
+                    <span class="material-symbols-outlined">view_kanban</span>
+                    <span>Kanban Board</span>
+                </button>
+                <button class="nav-item" data-view="table">
+                    <span class="material-symbols-outlined">table_chart</span>
+                    <span>List / Table</span>
+                </button>
+                <button class="nav-item" data-view="calendar">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span>Calendar</span>
+                </button>
+                <button class="nav-item" data-view="updates">
+                    <span class="material-symbols-outlined">history_edu</span>
+                    <span>Update Center</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats-mini">
+                    <div class="stat-mini">
+                        <span class="label">Today's Follow-ups</span>
+                        <span class="value" id="mini-followups-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <div class="project-selector-wrapper">
+                        <span class="material-symbols-outlined filter-icon">filter_alt</span>
+                        <select id="global-project-filter">
+                            <option value="all">All Projects & Leads</option>
+                            <option value="digital-marketing">Digital Marketing</option>
+                            <option value="nable-attendance">Nable Attendance Software</option>
+                            <option value="bni-tasks">BNI Tasks</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="time-widget">
+                        <span class="material-symbols-outlined">schedule</span>
+                        <span id="live-time">12 Jun 2026, 05:08 PM</span>
+                    </div>
+                    
+                    <button class="notification-trigger" id="notif-btn">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="badge hidden" id="notif-badge">0</span>
+                    </button>
+
+                    <button class="btn btn-secondary" id="btn-open-import" title="Upload Excel/CSV sheet">
+                        <span class="material-symbols-outlined">upload_file</span>
+                        <span>Import Excel</span>
+                    </button>
+
+                    <button class="btn btn-primary" id="btn-quick-add">
+                        <span class="material-symbols-outlined">add</span>
+                        <span>New Task / Lead</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Active View Containers -->
+            <div class="view-panel active" id="view-dashboard">
+                <!-- Dashboard Content (Generated Dynamically) -->
+                <div class="dashboard-grid">
+                    <!-- Counters Row -->
+                    <div class="stats-row" id="dashboard-counters"></div>
+                    
+                    <!-- Analytics Grid -->
+                    <div class="analytics-grid-row">
+                        <div class="card glass chart-card double-width">
+                            <h3>Lead & Project Progress</h3>
+                            <div class="chart-container" id="progress-chart-container">
+                                <!-- Dynamic SVG Line or Bar Chart -->
+                            </div>
+                        </div>
+                        <div class="card glass chart-card">
+                            <h3>Priority Distribution</h3>
+                            <div class="chart-container donut-container" id="priority-chart-container">
+                                <!-- Dynamic SVG Donut Chart -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Grid -->
+                    <div class="dashboard-bottom-grid">
+                        <!-- Upcoming Reminders -->
+                        <div class="card glass flex-card">
+                            <div class="card-header">
+                                <h3>Today & Upcoming Follow-ups</h3>
+                                <span class="badge warning" id="upcoming-reminders-count">0 Alert(s)</span>
+                            </div>
+                            <div class="list-container scrollable-y" id="dashboard-reminders-list">
+                                <div class="empty-state">No follow-ups today. Great job!</div>
+                            </div>
+                        </div>
+
+                        <!-- Blocked / Dependent Tasks -->
+                        <div class="card glass flex-card">
+                            <div class="card-header">
+                                <h3>Dependencies & Blockers</h3>
+                                <span class="badge danger" id="blocked-tasks-count">0 Blocked</span>
+                            </div>
+                            <div class="list-container scrollable-y" id="dashboard-blockers-list">
+                                <div class="empty-state">No active blockers. Flow is smooth!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban Board Panel -->
+            <div class="view-panel" id="view-board">
+                <div class="kanban-wrapper">
+                    <!-- Columns will be injected dynamically -->
+                </div>
+            </div>
+
+            <!-- List/Table Panel -->
+            <div class="view-panel" id="view-table">
+                <div class="table-controls-bar">
+                    <div class="search-box">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="task-search" placeholder="Search tasks, clients, details...">
+                    </div>
+                    <div class="filters-group">
+                        <select id="priority-filter">
+                            <option value="all">All Priorities</option>
+                            <option value="high">🔴 High</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                        <select id="status-filter">
+                            <option value="all">All Statuses</option>
+                            <option value="not-started">Not Started</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="on-hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive-container">
+                    <table class="data-table" id="tasks-table">
+                        <thead>
+                            <!-- Will change based on active project selection -->
+                        </thead>
+                        <tbody id="tasks-table-body">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Calendar Panel -->
+            <div class="view-panel" id="view-calendar">
+                <div class="calendar-layout">
+                    <div class="calendar-sidebar glass">
+                        <h3>Follow-up Schedule</h3>
+                        <div class="schedule-list scrollable-y" id="calendar-schedule-list">
+                            <!-- Injected list of followups -->
+                        </div>
+                    </div>
+                    <div class="calendar-main glass">
+                        <div class="calendar-header-bar">
+                            <button class="btn btn-icon" id="cal-prev-month"><span class="material-symbols-outlined">chevron_left</span></button>
+                            <h2 id="calendar-month-year">June 2026</h2>
+                            <button class="btn btn-icon" id="cal-next-month"><span class="material-symbols-outlined">chevron_right</span></button>
+                        </div>
+                        <div class="calendar-grid-header">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div class="calendar-grid" id="calendar-days-grid">
+                            <!-- Days injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Updates Panel -->
+            <div class="view-panel" id="view-updates">
+                <div class="updates-layout">
+                    <div class="updates-controls glass">
+                        <h3>Generate Summaries</h3>
+                        <div class="form-group">
+                            <label for="update-type">Update Frequency</label>
+                            <select id="update-type" class="form-control">
+                                <option value="daily">Daily Status Report</option>
+                                <option value="weekly">Weekly Progress Summary</option>
+                                <option value="monthly">Monthly Sales Review</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="update-project">Project Scope</label>
+                            <select id="update-project" class="form-control">
+                                <option value="all">All Scopes</option>
+                                <option value="digital-marketing">Digital Marketing</option>
+                                <option value="nable-attendance">Nable Attendance Software</option>
+                                <option value="bni-tasks">BNI Tasks</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="btn-generate-update">
+                            <span class="material-symbols-outlined">auto_awesome</span>
+                            <span>Generate Report</span>
+                        </button>
+                    </div>
+                    
+                    <div class="updates-output-container glass">
+                        <div class="card-header">
+                            <h3 id="update-report-title">Report Output</h3>
+                            <button class="btn btn-secondary btn-sm" id="btn-copy-update">
+                                <span class="material-symbols-outlined">content_copy</span>
+                                <span>Copy to Clipboard</span>
+                            </button>
+                        </div>
+                        <textarea id="update-report-text" readonly placeholder="Your generated report will appear here..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Overlay Dropdown -->
+    <div class="notification-dropdown glass hidden" id="notif-dropdown">
+        <div class="notif-header">
+            <h4>Alerts & Reminders</h4>
+            <button class="btn-clear-notif" id="btn-clear-notifs">Clear All</button>
+        </div>
+        <div class="notif-list scrollable-y" id="notif-list-container">
+            <!-- Dynamic alerts -->
+        </div>
+    </div>
+
+    <!-- Slide-over / Modal for Creating / Editing Tasks -->
+    <div class="modal-backdrop hidden" id="task-modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h3 id="modal-title">New Task</h3>
+                <button class="btn-close" id="modal-close"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label for="form-project-type">Project Area <span class="req">*</span></label>
+                        <select id="form-project-type" class="form-control" required>
+                            <option value="digital-marketing">Digital Marketing</option>
+                            <option value="nable-attendance">Nable Attendance Software</option>
+                            <option value="bni-tasks">BNI Tasks</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="form-task-title">Title / Client Name <span class="req">*</span></label>
+                        <input type="text" id="form-task-title" class="form-control" required placeholder="e.g. Acme Corp Web Dev">
+                    </div>
+                </div>
+
+                <!-- Digital Marketing Dynamic Sub-Form -->
+                <div id="fields-digital-marketing" class="sub-form-section">
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="dm-subproject">Service Segregation <span class="req">*</span></label>
+                            <select id="dm-subproject" class="form-control">
+                                <option value="Website Development">🖥️ Website Development</option>
+                                <option value="Marketing">📈 Marketing</option>
+                                <option value="SEO">🔍 SEO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dm-client">Client Contact Person</label>
+                            <input type="text" id="dm-client" class="form-control" placeholder="Contact Name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="dm-start-date">Start Date</label>
+                            <input type="date" id="dm-start-date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="dm-deadline">Deadline</label>
+                            <input type="date" id="dm-deadline" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="dm-stage">Current Stage</label>
+                            <input type="text" id="dm-stage" class="form-control" placeholder="e.g., UI Mockup, Backend API, Audit">
+                        </div>
+                        <div class="form-group">
+                            <label for="dm-next-action">Next Action</label>
+                            <input type="text" id="dm-next-action" class="form-control" placeholder="What needs to be done next?">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nable Attendance Software Dynamic Sub-Form -->
+                <div id="fields-nable-attendance" class="sub-form-section hidden">
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="nable-lead-status">Lead Status</label>
+                            <select id="nable-lead-status" class="form-control">
+                                <option value="Cold">❄️ Cold</option>
+                                <option value="Warm">🔥 Warm</option>
+                                <option value="Demo Scheduled">📅 Demo Scheduled</option>
+                                <option value="Demo Completed">✅ Demo Completed</option>
+                                <option value="Negotiation">🤝 Negotiation</option>
+                                <option value="Won / Installed">🎉 Won / Installed</option>
+                                <option value="Lost">❌ Lost</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nable-installed">Software Installed?</label>
+                            <select id="nable-installed" class="form-control">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="nable-credentials">Credentials / Portal Info</label>
+                            <input type="text" id="nable-credentials" class="form-control" placeholder="User: admin | Pass: 123... or URL">
+                        </div>
+                        <div class="form-group">
+                            <label for="nable-demo">Demo Stage</label>
+                            <select id="nable-demo" class="form-control">
+                                <option value="None">None</option>
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="Done">Done</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="nable-contact">Contact Person / Number</label>
+                            <input type="text" id="nable-contact" class="form-control" placeholder="Name & Ph. Number">
+                        </div>
+                        <div class="form-group">
+                            <label for="nable-billing">Billing Details</label>
+                            <input type="text" id="nable-billing" class="form-control" placeholder="Price, Plan, Billing Date">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BNI Tasks Dynamic Sub-Form -->
+                <div id="fields-bni-tasks" class="sub-form-section hidden">
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="bni-meeting-date">Meeting / Assign Date</label>
+                            <input type="date" id="bni-meeting-date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="bni-deadline">Task Deadline</label>
+                            <input type="date" id="bni-deadline" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row-grid">
+                        <div class="form-group">
+                            <label for="bni-assigned-by">Assigned By (BNI Member)</label>
+                            <input type="text" id="bni-assigned-by" class="form-control" placeholder="Member Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="bni-referral">Referral Name / details</label>
+                            <input type="text" id="bni-referral" class="form-control" placeholder="Details of referral (if any)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared/General Fields -->
+                <div class="shared-fields-divider">Task Status & Management</div>
+                
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label for="form-status">Status</label>
+                        <select id="form-status" class="form-control">
+                            <option value="not-started">Not Started</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="on-hold">On Hold</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-priority">Priority</label>
+                        <select id="form-priority" class="form-control">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="high">🔴 High</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-grid">
+                    <div class="form-group">
+                        <label for="form-assigned-to">Assigned To</label>
+                        <input type="text" id="form-assigned-to" class="form-control" placeholder="Your name or team member">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-followup-date">Follow-up Date</label>
+                        <div class="input-with-button">
+                            <input type="date" id="form-followup-date" class="form-control">
+                            <button type="button" class="btn btn-secondary btn-icon" id="btn-download-ics" title="Download Calendar Invite (.ics)">
+                                <span class="material-symbols-outlined">calendar_add_on</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-icon" id="btn-google-cal" title="Sync with Google Calendar (Online)">
+                                <span class="material-symbols-outlined">event</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dependency Section -->
+                <div class="dependency-block">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="form-has-dependency">
+                        <span class="checkmark"></span>
+                        <span>Depends on someone else (Blocker)?</span>
+                    </label>
+                    <div id="dependency-details-group" class="form-group hidden margin-top-sm">
+                        <div class="form-row-grid">
+                            <input type="text" id="form-dependency-person" class="form-control" placeholder="Name of Person (e.g. Designer, Developer, Client)">
+                            <input type="text" id="form-dependency-issue" class="form-control" placeholder="Details of Blocker / Dependency">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-tags">Tags (Comma-separated)</label>
+                    <input type="text" id="form-tags" class="form-control" placeholder="e.g. urgent, website, bni-referral">
+                </div>
+
+                <div class="form-group">
+                    <label for="form-description">Description</label>
+                    <textarea id="form-description" class="form-control" rows="3" placeholder="Write core details of the task/deal..."></textarea>
+                </div>
+
+                <!-- Quick Progress Log Comment -->
+                <div class="form-group progress-comment-group" id="progress-comment-block">
+                    <label for="form-progress-log">Record Progress Log (Appends to Timeline)</label>
+                    <textarea id="form-progress-log" class="form-control" rows="2" placeholder="e.g. Called client, they agreed to demo next Tuesday..."></textarea>
+                </div>
+
+                <!-- Historical Timeline Log -->
+                <div class="history-section hidden" id="task-history-block">
+                    <h4>Task History Timeline</h4>
+                    <div class="timeline scrollable-y" id="task-history-timeline">
+                        <!-- Timestamps injected dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-delete-task">Delete</button>
+                    <div class="flex-spacer"></div>
+                    <button type="button" class="btn btn-outline" id="btn-cancel-task">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-task">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Excel Import Modal -->
+    <div class="modal-backdrop hidden" id="import-modal">
+        <div class="modal-content glass" style="width: 700px; max-width: 90vw;">
+            <div class="modal-header">
+                <h3>Import Excel / CSV Tasks</h3>
+                <button class="btn-close" id="import-modal-close"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="import-wizard">
+                <div class="form-group margin-bottom-md" style="margin-bottom: 16px;">
+                    <label for="import-project-type">Target Project Category</label>
+                    <select id="import-project-type" class="form-control">
+                        <option value="digital-marketing">Digital Marketing</option>
+                        <option value="nable-attendance">Nable Attendance Software</option>
+                        <option value="bni-tasks">BNI Tasks</option>
+                    </select>
+                    <p class="help-text" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Select which project workspace the uploaded spreadsheet rows should populate.</p>
+                </div>
+
+                <div class="import-dropzone" id="import-dropzone" style="border: 2px dashed var(--border-glass); border-radius: 12px; padding: 32px 20px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.01); transition: var(--transition-normal);">
+                    <span class="material-symbols-outlined upload-icon" style="font-size: 48px; color: var(--color-primary); margin-bottom: 12px; display: inline-block;">upload_file</span>
+                    <p style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">Drag & Drop your Excel (.xlsx, .xls) or CSV file here</p>
+                    <p style="font-size: 11px; color: var(--text-muted);">or click to select file from computer</p>
+                    <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" class="hidden">
+                </div>
+
+                <div class="import-preview-container hidden" id="import-preview-container" style="margin-top: 20px;">
+                    <div class="shared-fields-divider" style="margin-bottom: 10px;">Data Preview & Column Mapping</div>
+                    <div style="font-size: 12px; margin-bottom: 10px; color: var(--color-success);" id="import-stats">Found 0 rows. Columns mapped automatically.</div>
+                    <div class="table-responsive-container" style="max-height: 200px;">
+                        <table class="data-table" id="import-preview-table" style="font-size: 11px;">
+                            <thead>
+                                <!-- Dynamic Headers -->
+                            </thead>
+                            <tbody id="import-preview-tbody">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-glass);">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-import">Cancel</button>
+                    <div class="flex-spacer"></div>
+                    <button type="button" class="btn btn-primary disabled" id="btn-confirm-import" disabled style="opacity: 0.5; pointer-events: none;">Confirm Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script Bootstrapper -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
