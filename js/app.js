@@ -15,6 +15,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalHandlers();
     setupUpdatesGenerator();
     setupImporterHandlers();
+
+    // Initialize reset button
+    const resetBtn = document.getElementById('btn-reset-app');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to clear all tasks and start completely fresh from scratch? This will delete all local tasks permanently.")) {
+                localStorage.clear();
+                location.reload();
+            }
+        });
+    }
     
     // Initialize modules
     initDashboard(openTaskModal);
