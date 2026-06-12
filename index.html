@@ -16,7 +16,37 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
+    <!-- Login Screen -->
+    <div class="login-wrapper" id="login-screen">
+        <div class="login-card glass">
+            <div class="login-header">
+                <span class="material-symbols-outlined login-logo-icon">blur_on</span>
+                <h2>SalesFlow Portal</h2>
+                <p>Enter your credentials to access the Task Tracker</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                    <label for="login-username" style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Username</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="e.g. admin" required autocomplete="username">
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                    <label for="login-password" style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="login-error-msg hidden" style="margin-bottom: 16px;">⚠️ Invalid credentials. Please try again.</div>
+                <button type="submit" class="btn btn-primary btn-block" id="btn-login-submit" style="width: 100%; justify-content: center; height: 42px;">
+                    <span>Sign In</span>
+                    <span class="material-symbols-outlined" style="font-size: 18px; margin-left: 8px;">login</span>
+                </button>
+            </form>
+            <div class="login-footer">
+                <span class="tip-badge">DEMO CREDS</span>
+                <span style="margin-top: 4px;">Username: <strong>admin</strong> | Password: <strong>salesflow2026</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container hidden">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="brand">
@@ -57,6 +87,10 @@
                 <button class="btn btn-outline btn-block btn-sm" id="btn-reset-app" style="margin-top: 12px; color: var(--color-danger); border-color: rgba(248,81,73,0.18);">
                     <span class="material-symbols-outlined" style="font-size: 16px;">delete_forever</span>
                     <span>Reset Tracker Data</span>
+                </button>
+                <button class="btn btn-outline btn-block btn-sm" id="btn-logout-app" style="margin-top: 8px; color: var(--text-muted); border-color: rgba(255,255,255,0.08);">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">logout</span>
+                    <span>Lock Workspace</span>
                 </button>
             </div>
         </aside>

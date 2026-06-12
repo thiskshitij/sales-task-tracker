@@ -11,6 +11,75 @@ import { parseExcelFile, importTasksToStore } from './importer.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     setupTimeClock();
+    setupAuthentication();
+});
+
+function setupAuthentication() {
+    const loginScreen = document.getElementById('login-screen');
+    const appContainer = document.querySelector('.app-container');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('btn-logout-app');
+
+    // Check existing session
+    if (sessionStorage.getItem('salesflow_auth') === 'true') {
+        showApp();
+    } else {
+        showLogin();
+    }
+
+    function showApp() {
+        if (loginScreen) loginScreen.classList.add('hidden');
+        if (appContainer) appContainer.classList.remove('hidden');
+        initializeApplication();
+    }
+
+    function showLogin() {
+        if (loginScreen) loginScreen.classList.remove('hidden');
+        if (appContainer) appContainer.classList.add('hidden');
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username');
+            const passwordInput = document.getElementById('login-password');
+            
+            if (usernameInput && passwordInput) {
+                const u = usernameInput.value.trim();
+                const p = passwordInput.value.trim();
+                
+                // Door credentials
+                if (u === 'admin' && p === 'salesflow2026') {
+                    sessionStorage.setItem('salesflow_auth', 'true');
+                    if (loginError) loginError.classList.add('hidden');
+                    // Reset fields
+                    usernameInput.value = '';
+                    passwordInput.value = '';
+                    showApp();
+                } else {
+                    if (loginError) loginError.classList.remove('hidden');
+                }
+            }
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm("Lock workspace and logout?")) {
+                sessionStorage.removeItem('salesflow_auth');
+                // Reload to completely tear down memory state & lock again
+                location.reload();
+            }
+        });
+    }
+}
+
+let appInitialized = false;
+function initializeApplication() {
+    if (appInitialized) return;
+    appInitialized = true;
+
     setupViewNavigation();
     setupModalHandlers();
     setupUpdatesGenerator();
@@ -51,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.dispatchEvent(new CustomEvent('store-updated'));
         });
     }
-});
+}
 
 /* Live clock update */
 function setupTimeClock() {
