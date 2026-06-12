@@ -18,7 +18,7 @@ export function initTable(onOpenTaskModal) {
     const globalFilter = document.getElementById('global-project-filter');
     const priorityFilter = document.getElementById('priority-filter');
     const statusFilter = document.getElementById('status-filter');
-    const searchInput = document.getElementById('task-search');
+    const searchInput = document.getElementById('global-search');
 
     [globalFilter, priorityFilter, statusFilter].forEach(el => {
         if (el) el.addEventListener('change', () => renderTable(onOpenTaskModal));
@@ -38,7 +38,7 @@ function renderTable(onOpenTaskModal) {
     const globalFilter = document.getElementById('global-project-filter');
     const priorityFilter = document.getElementById('priority-filter');
     const statusFilter = document.getElementById('status-filter');
-    const searchInput = document.getElementById('task-search');
+    const searchInput = document.getElementById('global-search');
 
     const projectType = globalFilter ? globalFilter.value : 'all';
     const priority = priorityFilter ? priorityFilter.value : 'all';
@@ -305,7 +305,7 @@ export function exportTableToCSV() {
     const globalFilter = document.getElementById('global-project-filter');
     const priorityFilter = document.getElementById('priority-filter');
     const statusFilter = document.getElementById('status-filter');
-    const searchInput = document.getElementById('task-search');
+    const searchInput = document.getElementById('global-search');
 
     const projectType = globalFilter ? globalFilter.value : 'all';
     const priority = priorityFilter ? priorityFilter.value : 'all';

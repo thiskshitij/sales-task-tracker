@@ -1043,6 +1043,18 @@ function setupCommandPalette() {
         }
     });
 
+    // Trigger via search icon button click
+    const triggerBtn = document.getElementById('btn-global-search-trigger');
+    if (triggerBtn) {
+        triggerBtn.addEventListener('click', () => {
+            if (isOpen) {
+                closePalette();
+            } else {
+                openPalette();
+            }
+        });
+    }
+
     // Search filter input
     input.addEventListener('input', () => {
         activeIndex = 0;

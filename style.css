@@ -1645,3 +1645,13 @@ input, select, textarea, button {
     color: var(--text-muted);
 }
 
+/* Global Search Input Sleek Focus Style */
+#global-search {
+    color: var(--text-main);
+}
+#global-search:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+}
+

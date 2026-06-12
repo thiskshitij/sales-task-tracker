@@ -52,6 +52,14 @@ export function initCalendar(onOpenTaskModal) {
             renderCalendar(onOpenTaskModal);
         });
     }
+
+    // Handle global search input changes
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            renderCalendar(onOpenTaskModal);
+        });
+    }
 }
 
 function renderCalendar(onOpenTaskModal) {
@@ -65,8 +73,12 @@ function renderCalendar(onOpenTaskModal) {
     const filterSelect = document.getElementById('global-project-filter');
     const activeProject = filterSelect ? filterSelect.value : 'all';
 
+    // Get search term
+    const searchInput = document.getElementById('global-search');
+    const search = searchInput ? searchInput.value : '';
+
     // Retrieve tasks filtered by project
-    const tasks = store.getTasksFiltered({ projectType: activeProject });
+    const tasks = store.getTasksFiltered({ projectType: activeProject, search });
 
     // Set Month Year Title
     const monthNames = [

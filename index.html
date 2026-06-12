@@ -109,6 +109,10 @@
                     <button class="btn btn-secondary btn-icon" id="btn-manage-projects" title="Manage Projects & Workspaces" style="padding: 6px; border-radius: 12px; margin-left: 8px;">
                         <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
                     </button>
+                    <div class="header-search-wrapper" style="position: relative; display: flex; align-items: center; margin-left: 12px; width: 220px;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 10px; color: var(--text-muted); font-size: 18px; pointer-events: none;">search</span>
+                        <input type="text" id="global-search" placeholder="Filter tasks / leads..." style="width: 100%; padding: 6px 12px 6px 34px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 10px; font-size: 12px; outline: none; transition: var(--transition-fast);">
+                    </div>
                 </div>
                 <div class="header-right">
                     <div class="time-widget">
@@ -116,6 +120,10 @@
                         <span id="live-time">12 Jun 2026, 05:08 PM</span>
                     </div>
                     
+                    <button class="btn btn-secondary btn-icon" id="btn-global-search-trigger" title="Command Search (Cmd+K)" style="padding: 6px; border-radius: 12px; margin-right: 8px; display: flex; align-items: center; justify-content: center; height: 34px; width: 34px;">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">search</span>
+                    </button>
+
                     <button class="notification-trigger" id="notif-btn">
                         <span class="material-symbols-outlined">notifications</span>
                         <span class="badge hidden" id="notif-badge">0</span>
@@ -199,10 +207,6 @@
             <!-- List/Table Panel -->
             <div class="view-panel" id="view-table">
                 <div class="table-controls-bar">
-                    <div class="search-box">
-                        <span class="material-symbols-outlined">search</span>
-                        <input type="text" id="task-search" placeholder="Search tasks, clients, details...">
-                    </div>
                     <div class="filters-group">
                         <select id="priority-filter">
                             <option value="all">All Priorities</option>
