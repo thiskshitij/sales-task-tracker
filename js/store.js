@@ -16,9 +16,16 @@ const yesterdayStr = getRelativeDate(-1);
 // High-fidelity initial sample data
 const defaultTasks = [];
 
+const defaultProjects = [
+    { id: 'digital-marketing', name: 'Digital Marketing', templateType: 'digital-marketing' },
+    { id: 'nable-attendance', name: 'Nable Attendance Software', templateType: 'nable-attendance' },
+    { id: 'bni-tasks', name: 'BNI Tasks', templateType: 'bni-tasks' }
+];
+
 class SalesStore {
     constructor() {
         this.tasks = [];
+        this.projects = [];
         this.init();
     }
 
@@ -36,12 +43,60 @@ class SalesStore {
             this.tasks = [...defaultTasks];
             this.saveToStorage();
         }
+
+        const storedProj = localStorage.getItem('salesflow_projects_v1');
+        if (storedProj) {
+            try {
+                this.projects = JSON.parse(storedProj);
+            } catch (e) {
+                console.error("Failed to parse stored projects, resetting...", e);
+                this.projects = [...defaultProjects];
+                this.saveToStorage();
+            }
+        } else {
+            this.projects = [...defaultProjects];
+            this.saveToStorage();
+        }
     }
 
     saveToStorage() {
         localStorage.setItem('salesflow_tasks_v3', JSON.stringify(this.tasks));
+        localStorage.setItem('salesflow_projects_v1', JSON.stringify(this.projects));
         // Dispatch custom event to notify other modules of updates
         window.dispatchEvent(new CustomEvent('store-updated'));
+    }
+
+    getProjects() {
+        return this.projects;
+    }
+
+    getProjectById(id) {
+        return this.projects.find(p => p.id === id);
+    }
+
+    addProject(name, templateType) {
+        const id = 'project-' + Date.now();
+        this.projects.push({ id, name, templateType });
+        this.saveToStorage();
+        return id;
+    }
+
+    renameProject(id, newName) {
+        const proj = this.projects.find(p => p.id === id);
+        if (proj) {
+            proj.name = newName;
+            this.saveToStorage();
+            return true;
+        }
+        return false;
+    }
+
+    deleteProject(id) {
+        this.projects = this.projects.filter(p => p.id !== id);
+        // Clean up tasks belonging to this project
+        this.tasks = this.tasks.filter(t => t.projectType !== id);
+        this.saveToStorage();
+        return true;
     }
 
     getAllTasks() {
@@ -128,15 +183,18 @@ class SalesStore {
                 logs.push(`Follow-up date updated to ${taskData.followupDate}.`);
             }
             
+            const project = this.getProjectById(taskData.projectType);
+            const templateType = project ? project.templateType : taskData.projectType;
+
             // Check project-specific fields
-            if (taskData.projectType === 'digital-marketing') {
+            if (templateType === 'digital-marketing') {
                 if (task.currentStage !== taskData.currentStage) {
                     logs.push(`Stage updated to '${taskData.currentStage}'.`);
                 }
                 if (task.nextAction !== taskData.nextAction && taskData.nextAction) {
                     logs.push(`Next action updated: '${taskData.nextAction}'.`);
                 }
-            } else if (taskData.projectType === 'nable-attendance') {
+            } else if (templateType === 'nable-attendance') {
                 if (task.leadStatus !== taskData.leadStatus) {
                     logs.push(`Lead Status changed to '${taskData.leadStatus}'.`);
                 }

@@ -119,9 +119,11 @@ function renderCalendar(onOpenTaskModal) {
             const isFollowup = task.followupDate === currentCellDateStr;
             
             // Event label styling
+            const project = store.getProjectById(task.projectType);
+            const templateType = project ? project.templateType : task.projectType;
             let catCode = 'DM';
-            if (task.projectType === 'nable-attendance') catCode = 'Nable';
-            else if (task.projectType === 'bni-tasks') catCode = 'BNI';
+            if (templateType === 'nable-attendance') catCode = 'Nable';
+            else if (templateType === 'bni-tasks') catCode = 'BNI';
             
             eventEl.className = `calendar-event ${catCode}`;
             eventEl.title = `${isFollowup ? 'Follow-up' : 'Deadline'}: ${task.title}`;

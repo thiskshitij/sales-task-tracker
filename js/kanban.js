@@ -104,23 +104,23 @@ function createTaskCard(task) {
     const priorityColor = task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'success';
     
     // Project tag
-    const projLabel = task.projectType === 'digital-marketing' 
-        ? 'DM' 
-        : task.projectType === 'nable-attendance' ? 'Nable' : 'BNI';
+    const project = store.getProjectById(task.projectType);
+    const templateType = project ? project.templateType : task.projectType;
+    const projLabel = project ? (project.name.length > 8 ? project.name.substring(0, 8) + '..' : project.name) : 'Task';
     
-    const projColor = task.projectType === 'digital-marketing' 
-        ? 'info' 
-        : task.projectType === 'nable-attendance' ? 'purple' : 'warning';
+    let projColor = 'info';
+    if (templateType === 'nable-attendance') projColor = 'purple';
+    else if (templateType === 'bni-tasks') projColor = 'warning';
 
     // Sub-details based on project
     let metaHTML = '';
-    if (task.projectType === 'digital-marketing') {
-        metaHTML = `<div>📋 Sub: ${task.subproject}</div>`;
+    if (templateType === 'digital-marketing') {
+        metaHTML = `<div>📋 Sub: ${task.subproject || ''}</div>`;
         if (task.clientName) metaHTML += `<div>👤 Client: ${task.clientName}</div>`;
-    } else if (task.projectType === 'nable-attendance') {
-        metaHTML = `<div>📈 Status: ${task.leadStatus}</div>`;
+    } else if (templateType === 'nable-attendance') {
+        metaHTML = `<div>📈 Status: ${task.leadStatus || ''}</div>`;
         if (task.contactPerson) metaHTML += `<div>👤 Contact: ${task.contactPerson.split(' ')[0]}</div>`;
-    } else if (task.projectType === 'bni-tasks') {
+    } else if (templateType === 'bni-tasks') {
         if (task.bniAssignedBy) metaHTML += `<div>👤 By: ${task.bniAssignedBy}</div>`;
     }
 

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalHandlers();
     setupUpdatesGenerator();
     setupImporterHandlers();
+    setupProjectsManagerHandlers();
 
     // Initialize reset button
     const resetBtn = document.getElementById('btn-reset-app');
@@ -213,11 +214,14 @@ function toggleSubForms(projectType) {
     nableSection.classList.add('hidden');
     bniSection.classList.add('hidden');
 
-    if (projectType === 'digital-marketing') {
+    const project = store.getProjectById(projectType);
+    const templateType = project ? project.templateType : projectType;
+
+    if (templateType === 'digital-marketing') {
         dmSection.classList.remove('hidden');
-    } else if (projectType === 'nable-attendance') {
+    } else if (templateType === 'nable-attendance') {
         nableSection.classList.remove('hidden');
-    } else if (projectType === 'bni-tasks') {
+    } else if (templateType === 'bni-tasks') {
         bniSection.classList.remove('hidden');
     }
 }
@@ -273,22 +277,25 @@ export function openTaskModal(taskId = null) {
         document.getElementById('form-tags').value = (task.tags || []).join(', ');
 
         // Toggle subforms and fill properties
+        const project = store.getProjectById(task.projectType);
+        const templateType = project ? project.templateType : task.projectType;
+
         toggleSubForms(task.projectType);
-        if (task.projectType === 'digital-marketing') {
+        if (templateType === 'digital-marketing') {
             document.getElementById('dm-subproject').value = task.subproject || 'Website Development';
             document.getElementById('dm-client').value = task.clientName || '';
             document.getElementById('dm-start-date').value = task.startDate || '';
             document.getElementById('dm-deadline').value = task.deadline || '';
             document.getElementById('dm-stage').value = task.currentStage || '';
             document.getElementById('dm-next-action').value = task.nextAction || '';
-        } else if (task.projectType === 'nable-attendance') {
+        } else if (templateType === 'nable-attendance') {
             document.getElementById('nable-lead-status').value = task.leadStatus || 'Cold';
             document.getElementById('nable-installed').value = task.installed || 'No';
             document.getElementById('nable-credentials').value = task.credentials || '';
             document.getElementById('nable-demo').value = task.demoStage || 'None';
             document.getElementById('nable-contact').value = task.contactPerson || '';
             document.getElementById('nable-billing').value = task.billingDetails || '';
-        } else if (task.projectType === 'bni-tasks') {
+        } else if (templateType === 'bni-tasks') {
             document.getElementById('bni-meeting-date').value = task.bniMeetingDate || '';
             document.getElementById('bni-deadline').value = task.bniDeadline || '';
             document.getElementById('bni-assigned-by').value = task.bniAssignedBy || '';
@@ -314,12 +321,15 @@ export function openTaskModal(taskId = null) {
 
         // Auto-select project type based on active global filter
         const filterVal = document.getElementById('global-project-filter').value;
+        const projects = store.getProjects();
+        const defaultProjId = projects.length > 0 ? projects[0].id : 'digital-marketing';
+
         if (filterVal !== 'all') {
             document.getElementById('form-project-type').value = filterVal;
             toggleSubForms(filterVal);
         } else {
-            document.getElementById('form-project-type').value = 'digital-marketing';
-            toggleSubForms('digital-marketing');
+            document.getElementById('form-project-type').value = defaultProjId;
+            toggleSubForms(defaultProjId);
         }
     }
 
@@ -351,21 +361,24 @@ function saveForm() {
     taskData.tags = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
 
     // Project-specific forms
-    if (projectType === 'digital-marketing') {
+    const project = store.getProjectById(projectType);
+    const templateType = project ? project.templateType : projectType;
+
+    if (templateType === 'digital-marketing') {
         taskData.subproject = document.getElementById('dm-subproject').value;
         taskData.clientName = document.getElementById('dm-client').value;
         taskData.startDate = document.getElementById('dm-start-date').value;
         taskData.deadline = document.getElementById('dm-deadline').value;
         taskData.currentStage = document.getElementById('dm-stage').value;
         taskData.nextAction = document.getElementById('dm-next-action').value;
-    } else if (projectType === 'nable-attendance') {
+    } else if (templateType === 'nable-attendance') {
         taskData.leadStatus = document.getElementById('nable-lead-status').value;
         taskData.installed = document.getElementById('nable-installed').value;
         taskData.credentials = document.getElementById('nable-credentials').value;
         taskData.demoStage = document.getElementById('nable-demo').value;
         taskData.contactPerson = document.getElementById('nable-contact').value;
         taskData.billingDetails = document.getElementById('nable-billing').value;
-    } else if (projectType === 'bni-tasks') {
+    } else if (templateType === 'bni-tasks') {
         taskData.bniMeetingDate = document.getElementById('bni-meeting-date').value;
         taskData.bniDeadline = document.getElementById('bni-deadline').value;
         taskData.bniAssignedBy = document.getElementById('bni-assigned-by').value;
@@ -420,7 +433,9 @@ function setupUpdatesGenerator() {
             reportText += `✅ COMPLETED TODAY:\n`;
             if (completedToday.length === 0) reportText += `  - No items marked completed today.\n`;
             completedToday.forEach(t => {
-                reportText += `  * ${t.title} (${t.projectType === 'digital-marketing' ? 'DM' : t.projectType === 'nable-attendance' ? 'Nable' : 'BNI'})\n`;
+                const taskProj = store.getProjectById(t.projectType);
+                const projLabel = taskProj ? taskProj.name : 'Task';
+                reportText += `  * ${t.title} (${projLabel})\n`;
                 if (t.description) reportText += `    Description: ${t.description}\n`;
             });
 
@@ -430,9 +445,12 @@ function setupUpdatesGenerator() {
                 reportText += `  * ${t.title} [Status: ${t.status.toUpperCase()}] [Priority: ${t.priority.toUpperCase()}]\n`;
                 
                 // Details
-                if (t.projectType === 'digital-marketing') {
+                const taskProj = store.getProjectById(t.projectType);
+                const templateType = taskProj ? taskProj.templateType : t.projectType;
+
+                if (templateType === 'digital-marketing') {
                     reportText += `    Stage: ${t.currentStage || 'N/A'} | Next Action: ${t.nextAction || 'None'}\n`;
-                } else if (t.projectType === 'nable-attendance') {
+                } else if (templateType === 'nable-attendance') {
                     reportText += `    Lead Status: ${t.leadStatus} | Demo: ${t.demoStage}\n`;
                 }
                 
@@ -481,9 +499,18 @@ function setupUpdatesGenerator() {
             reportText += `MONTHLY CRM PIPELINE & SALES SUMMARY:\n\n`;
             
             // Calculate sales pipeline conversions (completed Nable tasks or DM won status)
-            const nableDeals = tasks.filter(t => t.projectType === 'nable-attendance');
-            const dmProjects = tasks.filter(t => t.projectType === 'digital-marketing');
-            const bniTasks = tasks.filter(t => t.projectType === 'bni-tasks');
+            const nableDeals = tasks.filter(t => {
+                const p = store.getProjectById(t.projectType);
+                return (p ? p.templateType : t.projectType) === 'nable-attendance';
+            });
+            const dmProjects = tasks.filter(t => {
+                const p = store.getProjectById(t.projectType);
+                return (p ? p.templateType : t.projectType) === 'digital-marketing';
+            });
+            const bniTasks = tasks.filter(t => {
+                const p = store.getProjectById(t.projectType);
+                return (p ? p.templateType : t.projectType) === 'bni-tasks';
+            });
 
             reportText += `📊 TOTAL PIPELINE STATUS:\n`;
             reportText += `  * Nable CRM Deals Won/Installed: ${nableDeals.filter(t => t.leadStatus === 'Won / Installed' || t.installed === 'Yes').length} Leads\n`;
@@ -696,4 +723,156 @@ function setupImporterHandlers() {
             window.dispatchEvent(new CustomEvent('store-updated'));
         });
     }
+}
+
+function populateProjectDropdowns() {
+    const projects = store.getProjects();
+    
+    // 1. global-project-filter
+    const globalFilter = document.getElementById('global-project-filter');
+    if (globalFilter) {
+        const currentVal = globalFilter.value;
+        globalFilter.innerHTML = '<option value="all">All Projects</option>' + 
+            projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        if ([...globalFilter.options].some(opt => opt.value === currentVal)) {
+            globalFilter.value = currentVal;
+        } else {
+            globalFilter.value = 'all';
+        }
+    }
+    
+    // 2. form-project-type
+    const formProject = document.getElementById('form-project-type');
+    if (formProject) {
+        const currentVal = formProject.value;
+        formProject.innerHTML = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        if ([...formProject.options].some(opt => opt.value === currentVal)) {
+            formProject.value = currentVal;
+        }
+    }
+    
+    // 3. import-project-type
+    const importProject = document.getElementById('import-project-type');
+    if (importProject) {
+        const currentVal = importProject.value;
+        importProject.innerHTML = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        if ([...importProject.options].some(opt => opt.value === currentVal)) {
+            importProject.value = currentVal;
+        }
+    }
+    
+    // 4. update-project
+    const updateProject = document.getElementById('update-project');
+    if (updateProject) {
+        const currentVal = updateProject.value;
+        updateProject.innerHTML = '<option value="all">All Scopes</option>' + 
+            projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        if ([...updateProject.options].some(opt => opt.value === currentVal)) {
+            updateProject.value = currentVal;
+        } else {
+            updateProject.value = 'all';
+        }
+    }
+}
+
+function renderManageProjectsList() {
+    const listContainer = document.getElementById('manage-projects-list');
+    if (!listContainer) return;
+    
+    const projects = store.getProjects();
+    listContainer.innerHTML = projects.map(p => {
+        const icon = p.templateType === 'digital-marketing' 
+            ? 'campaign' 
+            : p.templateType === 'nable-attendance' ? 'badge' : 'groups';
+        return `
+            <div class="project-item" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                    <span class="material-symbols-outlined" style="color: var(--text-muted); font-size: 18px;">${icon}</span>
+                    <input type="text" class="form-control rename-project-input" data-project-id="${p.id}" value="${p.name}" style="padding: 4px 8px; font-size: 13px; height: auto; background: rgba(255,255,255,0.05); border: 1px solid transparent; border-radius: 6px; flex: 1;" />
+                </div>
+                <button class="btn btn-icon btn-sm btn-delete-project" data-project-id="${p.id}" title="Delete Project" style="color: var(--color-danger); background: rgba(248,81,73,0.05); padding: 4px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    // Attach listeners
+    listContainer.querySelectorAll('.rename-project-input').forEach(input => {
+        const id = input.dataset.projectId;
+        const originalValue = input.value;
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                input.blur();
+            }
+        });
+        
+        input.addEventListener('blur', () => {
+            const val = input.value.trim();
+            if (val && val !== originalValue) {
+                store.renameProject(id, val);
+            } else {
+                input.value = originalValue;
+            }
+        });
+    });
+
+    listContainer.querySelectorAll('.btn-delete-project').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.projectId;
+            const proj = store.getProjectById(id);
+            if (proj) {
+                if (confirm(`Are you sure you want to delete the project "${proj.name}"? This will permanently delete all tasks associated with it.`)) {
+                    store.deleteProject(id);
+                }
+            }
+        });
+    });
+}
+
+function setupProjectsManagerHandlers() {
+    const btnManage = document.getElementById('btn-manage-projects');
+    const modal = document.getElementById('projects-modal');
+    const modalClose = document.getElementById('projects-modal-close');
+    const btnAddSubmit = document.getElementById('btn-add-project-submit');
+
+    if (btnManage && modal) {
+        btnManage.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            renderManageProjectsList();
+        });
+    }
+
+    if (modalClose && modal) {
+        modalClose.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    if (btnAddSubmit) {
+        btnAddSubmit.addEventListener('click', () => {
+            const inputName = document.getElementById('new-project-name');
+            const selectTemplate = document.getElementById('new-project-template');
+            if (inputName && selectTemplate) {
+                const name = inputName.value.trim();
+                const template = selectTemplate.value;
+                if (!name) {
+                    alert('Please enter a project workspace name.');
+                    return;
+                }
+                store.addProject(name, template);
+                inputName.value = '';
+            }
+        });
+    }
+
+    // Listen for store updates to keep UI synchronized
+    window.addEventListener('store-updated', () => {
+        populateProjectDropdowns();
+        renderManageProjectsList();
+    });
+
+    // Run initial population
+    populateProjectDropdowns();
 }

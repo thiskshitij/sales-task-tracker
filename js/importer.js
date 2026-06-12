@@ -92,8 +92,12 @@ export function mapRowToSchema(row, projectType) {
     const tagsVal = getVal(['tags', 'tag', 'category', 'provision of tags']);
     task.tags = tagsVal ? String(tagsVal).split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
 
+    // Resolve template type
+    const project = store.getProjectById(projectType);
+    const templateType = project ? project.templateType : projectType;
+
     // Digital Marketing Custom Fields
-    if (projectType === 'digital-marketing') {
+    if (templateType === 'digital-marketing') {
         task.subproject = getVal(['segregation', 'subproject', 'service', 'type', 'segregated']) || 'Website Development';
         task.clientName = getVal(['client name', 'client', 'contact name']) || '';
         task.startDate = getDateVal(['start date', 'start', 'startdate']);
@@ -108,7 +112,7 @@ export function mapRowToSchema(row, projectType) {
         }
     } 
     // Nable Attendance CRM Custom Fields
-    else if (projectType === 'nable-attendance') {
+    else if (templateType === 'nable-attendance') {
         task.leadStatus = getVal(['lead status', 'status', 'sales stage', 'leadstatus']) || 'Cold';
         task.installed = getVal(['installed', 'installed?', 'software installed', 'is installed', 'installed status']) || 'No';
         task.credentials = getVal(['credentials', 'login info', 'portal', 'creds']) || '';
@@ -117,7 +121,7 @@ export function mapRowToSchema(row, projectType) {
         task.billingDetails = getVal(['billing details', 'billing', 'price', 'pricing', 'billingdetails']) || '';
     } 
     // BNI Custom Fields
-    else if (projectType === 'bni-tasks') {
+    else if (templateType === 'bni-tasks') {
         task.bniMeetingDate = getDateVal(['meeting date', 'bni date', 'assign date', 'meetingdate']);
         task.bniDeadline = getDateVal(['deadline', 'due date', 'task deadline', 'bnideadline']);
         task.bniAssignedBy = getVal(['assigned by', 'assignedby', 'member', 'assigned from']) || '';

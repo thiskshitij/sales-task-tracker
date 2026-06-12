@@ -79,9 +79,12 @@ function setupHeaders(tableEl, projectType, onOpenTaskModal) {
     const thead = tableEl.querySelector('thead');
     if (!thead) return;
 
+    const project = store.getProjectById(projectType);
+    const templateType = project ? project.templateType : projectType;
+
     let headers = [];
     
-    if (projectType === 'digital-marketing') {
+    if (templateType === 'digital-marketing') {
         headers = [
             { field: 'sr_no', label: 'Sr. No.' },
             { field: 'title', label: 'Project Name' },
@@ -96,7 +99,7 @@ function setupHeaders(tableEl, projectType, onOpenTaskModal) {
             { field: 'assignedTo', label: 'Assigned To' },
             { field: 'nextAction', label: 'Next Action' }
         ];
-    } else if (projectType === 'nable-attendance') {
+    } else if (templateType === 'nable-attendance') {
         headers = [
             { field: 'sr_no', label: 'Sr. No.' },
             { field: 'title', label: 'Lead / School Name' },
@@ -110,7 +113,7 @@ function setupHeaders(tableEl, projectType, onOpenTaskModal) {
             { field: 'priority', label: 'Priority' },
             { field: 'assignedTo', label: 'Assigned' }
         ];
-    } else if (projectType === 'bni-tasks') {
+    } else if (templateType === 'bni-tasks') {
         headers = [
             { field: 'sr_no', label: 'Sr. No.' },
             { field: 'title', label: 'BNI Task Details' },
@@ -193,7 +196,10 @@ function getRowHTML(task, srNo, viewMode) {
         ? `<span class="badge danger" title="${task.dependencyPerson}: ${task.dependencyIssue}">⚠️ Blocker</span>`
         : `<span class="badge success" style="background:rgba(63, 185, 80, 0.05);">None</span>`;
 
-    if (viewMode === 'digital-marketing') {
+    const project = store.getProjectById(viewMode);
+    const templateType = project ? project.templateType : viewMode;
+
+    if (templateType === 'digital-marketing') {
         return `
             <td>${srNo}</td>
             <td style="font-weight:600; color:var(--text-main);">${task.title}</td>
@@ -208,7 +214,7 @@ function getRowHTML(task, srNo, viewMode) {
             <td>${task.assignedTo || 'Unassigned'}</td>
             <td>${task.nextAction || '-'}</td>
         `;
-    } else if (viewMode === 'nable-attendance') {
+    } else if (templateType === 'nable-attendance') {
         const installBadge = task.installed === 'Yes' 
             ? `<span class="badge success">Yes</span>` 
             : `<span class="badge danger">No</span>`;
@@ -225,7 +231,7 @@ function getRowHTML(task, srNo, viewMode) {
             <td>${prioBadge}</td>
             <td>${task.assignedTo || 'Unassigned'}</td>
         `;
-    } else if (viewMode === 'bni-tasks') {
+    } else if (templateType === 'bni-tasks') {
         const tagsHTML = (task.tags || []).map(t => `<span class="badge info" style="padding: 2px 4px; font-size: 9px; background: rgba(88,166,255,0.08);">${t}</span>`).join(' ');
         return `
             <td>${srNo}</td>
@@ -241,13 +247,13 @@ function getRowHTML(task, srNo, viewMode) {
         `;
     } else {
         // generic 'all' view
-        const catLabel = task.projectType === 'digital-marketing' 
-            ? 'DM' 
-            : task.projectType === 'nable-attendance' ? 'Nable' : 'BNI';
+        const taskProj = store.getProjectById(task.projectType);
+        const taskTemplate = taskProj ? taskProj.templateType : task.projectType;
+        const catLabel = taskProj ? (taskProj.name.length > 8 ? taskProj.name.substring(0, 8) + '..' : taskProj.name) : 'Task';
         
-        const catColor = task.projectType === 'digital-marketing' 
-            ? 'info' 
-            : task.projectType === 'nable-attendance' ? 'purple' : 'warning';
+        let catColor = 'info';
+        if (taskTemplate === 'nable-attendance') catColor = 'purple';
+        else if (taskTemplate === 'bni-tasks') catColor = 'warning';
 
         return `
             <td>${srNo}</td>

@@ -23,7 +23,10 @@ function renderCounters() {
     // Calculations
     const activeTasks = tasks.filter(t => t.status !== 'completed');
     const followupTodayCount = activeTasks.filter(t => t.followupDate && t.followupDate <= todayStr).length;
-    const bniCount = activeTasks.filter(t => t.projectType === 'bni-tasks').length;
+    const bniCount = activeTasks.filter(t => {
+        const proj = store.getProjectById(t.projectType);
+        return proj && proj.templateType === 'bni-tasks';
+    }).length;
     const blockersCount = activeTasks.filter(t => t.hasDependency).length;
     
     // Completion Rate
@@ -99,13 +102,15 @@ function renderProgressChart() {
     };
 
     tasks.forEach(t => {
-        if (projects[t.projectType]) {
+        const proj = store.getProjectById(t.projectType);
+        const template = proj ? proj.templateType : 'digital-marketing';
+        if (projects[template]) {
             if (t.status === 'completed') {
-                projects[t.projectType].completed++;
+                projects[template].completed++;
             } else if (t.status === 'in-progress') {
-                projects[t.projectType].inProgress++;
+                projects[template].inProgress++;
             } else {
-                projects[t.projectType].notStarted++;
+                projects[template].notStarted++;
             }
         }
     });
@@ -295,11 +300,11 @@ function renderRemindersAndBlockers(onOpenTaskModal) {
                     ? `<span class="badge danger" style="padding: 2px 6px;">Overdue: ${task.followupDate}</span>`
                     : `<span class="badge warning" style="padding: 2px 6px;">Today</span>`;
                 
-                const projLabel = task.projectType === 'digital-marketing' 
-                    ? 'DM' 
-                    : task.projectType === 'nable-attendance' ? 'Nable' : 'BNI';
+                const proj = store.getProjectById(task.projectType);
+                const template = proj ? proj.templateType : 'digital-marketing';
+                const projLabel = proj ? proj.name.substring(0, 8) : 'Task';
                 
-                const clientInfo = task.projectType === 'nable-attendance'
+                const clientInfo = template === 'nable-attendance'
                     ? task.contactPerson || 'Lead'
                     : task.clientName || 'Client';
 

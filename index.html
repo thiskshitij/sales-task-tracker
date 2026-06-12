@@ -65,16 +65,16 @@
         <main class="main-content">
             <!-- Top Header -->
             <header class="top-header">
-                <div class="header-left">
+                <div class="header-left" style="display: flex; align-items: center;">
                     <div class="project-selector-wrapper">
                         <span class="material-symbols-outlined filter-icon">filter_alt</span>
                         <select id="global-project-filter">
-                            <option value="all">All Projects & Leads</option>
-                            <option value="digital-marketing">Digital Marketing</option>
-                            <option value="nable-attendance">Nable Attendance Software</option>
-                            <option value="bni-tasks">BNI Tasks</option>
+                            <!-- Dynamic projects options -->
                         </select>
                     </div>
+                    <button class="btn btn-secondary btn-icon" id="btn-manage-projects" title="Manage Projects & Workspaces" style="padding: 6px; border-radius: 12px; margin-left: 8px;">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+                    </button>
                 </div>
                 <div class="header-right">
                     <div class="time-widget">
@@ -549,6 +549,47 @@
                     <button type="button" class="btn btn-outline" id="btn-cancel-import">Cancel</button>
                     <div class="flex-spacer"></div>
                     <button type="button" class="btn btn-primary disabled" id="btn-confirm-import" disabled style="opacity: 0.5; pointer-events: none;">Confirm Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Projects Modal -->
+    <div class="modal-backdrop hidden" id="projects-modal">
+        <div class="modal-content glass" style="width: 550px; max-height: 85vh; height: auto; border-radius: 16px;">
+            <div class="modal-header">
+                <h3>Manage Projects & Workspaces</h3>
+                <button class="btn-close" id="projects-modal-close"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <div class="projects-manager-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Add New Project Section -->
+                <div class="add-project-form" style="background: rgba(255,255,255,0.015); border: 1px dashed var(--border-glass); border-radius: 10px; padding: 16px;">
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--color-primary);">Create New Workspace</h4>
+                    <div class="form-row-grid" style="grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="gap:4px;">
+                            <label style="font-size: 10px; color: var(--text-muted);">Workspace Name</label>
+                            <input type="text" id="new-project-name" class="form-control" placeholder="e.g. Real Estate CRM">
+                        </div>
+                        <div class="form-group" style="gap:4px;">
+                            <label style="font-size: 10px; color: var(--text-muted);">Layout Template</label>
+                            <select id="new-project-template" class="form-control">
+                                <option value="digital-marketing">Digital Marketing</option>
+                                <option value="nable-attendance">Nable Lead CRM</option>
+                                <option value="bni-tasks">BNI Tasks</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm btn-block" id="btn-add-project-submit" style="width: 100%; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+                        <span>Create Project Workspace</span>
+                    </button>
+                </div>
+
+                <!-- Active Projects List -->
+                <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Active Workspaces</h4>
+                <div class="projects-list-container scrollable-y" id="manage-projects-list" style="max-height: 250px; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Projects injected dynamically -->
                 </div>
             </div>
         </div>
