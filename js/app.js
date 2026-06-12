@@ -538,9 +538,51 @@ function saveForm() {
         taskData.bniReferral = document.getElementById('bni-referral').value;
     }
 
+    // Check if the follow-up date changed or is new
+    let openGoogleCal = false;
+    const isNew = !taskData.id;
+    if (taskData.followupDate) {
+        if (isNew) {
+            openGoogleCal = true;
+        } else {
+            const existingTask = store.getTaskById(taskData.id);
+            if (existingTask && existingTask.followupDate !== taskData.followupDate) {
+                openGoogleCal = true;
+            }
+        }
+    }
+
     // Save and dispatch updates
     store.saveTask(taskData);
     closeModal();
+
+    if (openGoogleCal) {
+        const typedLog = taskData.progressLog;
+        let latestLog = '';
+        if (taskData.id) {
+            const taskObj = store.getTaskById(taskData.id);
+            if (taskObj && taskObj.history && taskObj.history.length > 0) {
+                const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
+                if (logs.length > 0) {
+                    latestLog = logs[logs.length - 1].message;
+                }
+            }
+        }
+        const latestLogVal = typedLog || latestLog || taskData.description || '';
+        const pointOfAction = taskData.nextAction || 'Follow-up';
+
+        const url = getGoogleCalendarLink({
+            id: taskData.id || 'new',
+            title: taskData.title || 'Follow up task',
+            description: taskData.description || '',
+            followupDate: taskData.followupDate,
+            latestLog: latestLogVal,
+            pointOfAction: pointOfAction
+        });
+        if (url) {
+            window.open(url, '_blank');
+        }
+    }
 }
 
 /* Daily, Weekly, Monthly Summary Reporter generator */
@@ -1436,6 +1478,19 @@ function renderStoryTimeline(history) {
                             updatedData.progressLog = `Postponed task follow-up date to ${newDate}.`;
                             store.saveTask(updatedData);
                             renderWhatsOnPlate();
+
+                            // Trigger Google Calendar redirect for the rescheduled date
+                            const url = getGoogleCalendarLink({
+                                id: updatedData.id,
+                                title: updatedData.title || 'Follow up task',
+                                description: updatedData.description || '',
+                                followupDate: updatedData.followupDate || updatedData.bniDeadline || updatedData.deadline,
+                                latestLog: updatedData.progressLog,
+                                pointOfAction: updatedData.nextAction || 'Follow-up'
+                            });
+                            if (url) {
+                                window.open(url, '_blank');
+                            }
                         }
                     });
                 }
