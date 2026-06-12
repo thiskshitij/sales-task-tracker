@@ -1233,8 +1233,9 @@ function setupCommandPalette() {
         // Force re-renders
         window.dispatchEvent(new CustomEvent('store-updated'));
     }
+}
 
-    function renderStoryTimeline(history) {
+function renderStoryTimeline(history) {
         if (!history || history.length === 0) return '<div class="empty-state">No history recorded yet.</div>';
 
         // Group items by date
@@ -1441,4 +1442,3 @@ function setupCommandPalette() {
             });
         }
     }
-}
