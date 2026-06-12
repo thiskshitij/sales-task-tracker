@@ -34,6 +34,9 @@ class SalesStore {
         if (stored) {
             try {
                 this.tasks = JSON.parse(stored);
+                if (!Array.isArray(this.tasks)) {
+                    throw new Error("Tasks must be an array");
+                }
             } catch (e) {
                 console.error("Failed to parse stored tasks, resetting...", e);
                 this.tasks = [...defaultTasks];
@@ -48,6 +51,9 @@ class SalesStore {
         if (storedProj) {
             try {
                 this.projects = JSON.parse(storedProj);
+                if (!Array.isArray(this.projects) || this.projects.length === 0) {
+                    throw new Error("Projects must be a non-empty array");
+                }
             } catch (e) {
                 console.error("Failed to parse stored projects, resetting...", e);
                 this.projects = [...defaultProjects];
