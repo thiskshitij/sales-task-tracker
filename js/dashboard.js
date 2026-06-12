@@ -86,6 +86,7 @@ function renderCounters() {
 function renderCharts() {
     renderProgressChart();
     renderPriorityDonutChart();
+    renderFunnelChart();
 }
 
 function renderProgressChart() {
@@ -377,4 +378,59 @@ function renderRemindersAndBlockers(onOpenTaskModal) {
             });
         }
     }
+}
+
+function renderFunnelChart() {
+    const container = document.getElementById('crm-funnel-chart-container');
+    if (!container) return;
+
+    const tasks = store.getAllTasks();
+    const crmTasks = tasks.filter(t => {
+        const p = store.getProjectById(t.projectType);
+        return (p ? p.templateType : t.projectType) === 'nable-attendance';
+    });
+
+    let cold = 0, warm = 0, demo = 0, won = 0;
+    crmTasks.forEach(t => {
+        const status = t.leadStatus || 'Cold';
+        if (status.includes('Cold')) cold++;
+        else if (status.includes('Warm')) warm++;
+        else if (status.includes('Demo') || (t.demoStage && t.demoStage !== 'None')) demo++;
+        else if (status.includes('Won') || t.installed === 'Yes') won++;
+    });
+
+    // Cumulative calculations
+    const countTotal = cold + warm + demo + won;
+    const countWarm = warm + demo + won;
+    const countDemo = demo + won;
+    const countWon = won;
+
+    if (countTotal === 0) {
+        container.innerHTML = `<div class="empty-state">No CRM leads found.</div>`;
+        return;
+    }
+
+    const pctWarm = countTotal > 0 ? Math.round((countWarm / countTotal) * 100) : 0;
+    const pctDemo = countTotal > 0 ? Math.round((countDemo / countTotal) * 100) : 0;
+    const pctWon = countTotal > 0 ? Math.round((countWon / countTotal) * 100) : 0;
+
+    container.innerHTML = `
+        <svg viewBox="0 0 300 180" style="width: 100%; height: 100%;">
+            <!-- Stage 1 (Top): Leads -->
+            <polygon points="20,10 280,10 250,45 50,45" fill="var(--color-primary)" opacity="0.85"></polygon>
+            <text x="150" y="28" text-anchor="middle" fill="var(--text-inverse)" font-size="10" font-weight="700">Leads: ${countTotal} (100%)</text>
+            
+            <!-- Stage 2: Contacted / Warm -->
+            <polygon points="55,50 245,50 215,85 85,85" fill="var(--color-purple)" opacity="0.85"></polygon>
+            <text x="150" y="68" text-anchor="middle" fill="var(--text-inverse)" font-size="10" font-weight="700">Warm: ${countWarm} (${pctWarm}%)</text>
+            
+            <!-- Stage 3: Demo -->
+            <polygon points="90,90 210,90 180,125 120,125" fill="var(--color-warning)" opacity="0.85"></polygon>
+            <text x="150" y="108" text-anchor="middle" fill="var(--text-inverse)" font-size="10" font-weight="700">Demo: ${countDemo} (${pctDemo}%)</text>
+            
+            <!-- Stage 4 (Bottom): Won -->
+            <polygon points="125,130 175,130 165,165 135,165" fill="var(--color-success)" opacity="0.85"></polygon>
+            <text x="150" y="148" text-anchor="middle" fill="var(--text-inverse)" font-size="10" font-weight="700">Won: ${countWon} (${pctWon}%)</text>
+        </svg>
+    `;
 }

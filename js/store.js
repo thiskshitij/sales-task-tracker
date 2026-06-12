@@ -240,6 +240,33 @@ class SalesStore {
         }
         return false;
     }
+
+    // Export whole store (tasks + projects) to JSON string
+    exportFullBackup() {
+        const payload = {
+            version: 'salesflow_backup_v1',
+            timestamp: new Date().toISOString(),
+            projects: this.projects,
+            tasks: this.tasks
+        };
+        return JSON.stringify(payload, null, 2);
+    }
+
+    // Import from JSON string backup (overwrites tasks & projects)
+    importFullBackup(jsonString) {
+        try {
+            const payload = JSON.parse(jsonString);
+            if (payload && payload.version === 'salesflow_backup_v1' && Array.isArray(payload.projects) && Array.isArray(payload.tasks)) {
+                this.projects = payload.projects;
+                this.tasks = payload.tasks;
+                this.saveToStorage();
+                return true;
+            }
+        } catch (e) {
+            console.error("Failed to restore full database backup:", e);
+        }
+        return false;
+    }
 }
 
 export const store = new SalesStore();

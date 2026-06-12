@@ -299,3 +299,118 @@ function sortTasks(tasks, field, order) {
         }
     });
 }
+
+export function exportTableToCSV() {
+    // Get filter states
+    const globalFilter = document.getElementById('global-project-filter');
+    const priorityFilter = document.getElementById('priority-filter');
+    const statusFilter = document.getElementById('status-filter');
+    const searchInput = document.getElementById('task-search');
+
+    const projectType = globalFilter ? globalFilter.value : 'all';
+    const priority = priorityFilter ? priorityFilter.value : 'all';
+    const status = statusFilter ? statusFilter.value : 'all';
+    const search = searchInput ? searchInput.value : '';
+
+    // Fetch and filter tasks
+    let tasks = store.getTasksFiltered({ projectType, priority, status, search });
+    tasks = sortTasks(tasks, currentSortField, currentSortOrder);
+
+    const project = store.getProjectById(projectType);
+    const templateType = project ? project.templateType : projectType;
+
+    let headers = [];
+    let rowMapper = null;
+
+    if (templateType === 'digital-marketing') {
+        headers = ['Sr. No.', 'Project Name', 'Client Name', 'Segregation', 'Start Date', 'Deadline', 'Current Stage', 'Status', 'Priority', 'Blockers', 'Assigned To', 'Next Action'];
+        rowMapper = (t, idx) => [
+            idx + 1,
+            t.title,
+            t.clientName || '',
+            t.subproject || 'Marketing',
+            t.startDate || '',
+            t.deadline || '',
+            t.currentStage || '',
+            t.status,
+            t.priority,
+            t.hasDependency ? `Yes (${t.dependencyPerson}: ${t.dependencyIssue})` : 'No',
+            t.assignedTo || 'Unassigned',
+            t.nextAction || ''
+        ];
+    } else if (templateType === 'nable-attendance') {
+        headers = ['Sr. No.', 'Lead / School Name', 'Lead Status', 'Demo', 'Followup Date', 'Installed?', 'Contact Person', 'Billing details', 'Status', 'Priority', 'Assigned'];
+        rowMapper = (t, idx) => [
+            idx + 1,
+            t.title,
+            t.leadStatus || 'Lead',
+            t.demoStage || 'None',
+            t.followupDate || '',
+            t.installed || 'No',
+            t.contactPerson || '',
+            t.billingDetails || '',
+            t.status,
+            t.priority,
+            t.assignedTo || 'Unassigned'
+        ];
+    } else if (templateType === 'bni-tasks') {
+        headers = ['Sr. No.', 'BNI Task Details', 'Meeting Date', 'Deadline', 'Assigned By', 'Referral details', 'Status', 'Priority', 'Tags', 'Assigned To'];
+        rowMapper = (t, idx) => [
+            idx + 1,
+            t.title,
+            t.bniMeetingDate || '',
+            t.bniDeadline || '',
+            t.bniAssignedBy || '',
+            t.bniReferral || '',
+            t.status,
+            t.priority,
+            (t.tags || []).join(', '),
+            t.assignedTo || 'Unassigned'
+        ];
+    } else {
+        // 'all'
+        headers = ['Sr. No.', 'Category', 'Task Name', 'Status', 'Priority', 'Followup', 'Deadline', 'Blockers', 'Assigned To'];
+        rowMapper = (t, idx) => {
+            const taskProj = store.getProjectById(t.projectType);
+            const catLabel = taskProj ? taskProj.name : t.projectType;
+            return [
+                idx + 1,
+                catLabel,
+                t.title,
+                t.status,
+                t.priority,
+                t.followupDate || '',
+                t.deadline || t.bniDeadline || '',
+                t.hasDependency ? `Yes (${t.dependencyPerson}: ${t.dependencyIssue})` : 'No',
+                t.assignedTo || 'Unassigned'
+            ];
+        };
+    }
+
+    // Generate CSV contents
+    const escapeCSV = (val) => {
+        const str = String(val === undefined || val === null ? '' : val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+
+    const csvRows = [];
+    csvRows.push(headers.map(escapeCSV).join(','));
+    tasks.forEach((t, idx) => {
+        csvRows.push(rowMapper(t, idx).map(escapeCSV).join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `salesflow_export_${projectType}_${dateStr}.csv`;
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}

@@ -142,7 +142,7 @@
                     
                     <!-- Analytics Grid -->
                     <div class="analytics-grid-row">
-                        <div class="card glass chart-card double-width">
+                        <div class="card glass chart-card">
                             <h3>Lead & Project Progress</h3>
                             <div class="chart-container" id="progress-chart-container">
                                 <!-- Dynamic SVG Line or Bar Chart -->
@@ -152,6 +152,12 @@
                             <h3>Priority Distribution</h3>
                             <div class="chart-container donut-container" id="priority-chart-container">
                                 <!-- Dynamic SVG Donut Chart -->
+                            </div>
+                        </div>
+                        <div class="card glass chart-card">
+                            <h3>CRM Sales Funnel</h3>
+                            <div class="chart-container" id="crm-funnel-chart-container">
+                                <!-- Dynamic SVG Funnel Chart -->
                             </div>
                         </div>
                     </div>
@@ -211,6 +217,10 @@
                             <option value="on-hold">On Hold</option>
                             <option value="completed">Completed</option>
                         </select>
+                        <button class="btn btn-secondary btn-sm" id="btn-export-table" title="Export Filtered List to CSV" style="height: 38px;">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                            <span>Export CSV</span>
+                        </button>
                     </div>
                 </div>
                 <div class="table-responsive-container">
@@ -622,9 +632,37 @@
 
                 <!-- Active Projects List -->
                 <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Active Workspaces</h4>
-                <div class="projects-list-container scrollable-y" id="manage-projects-list" style="max-height: 250px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="projects-list-container scrollable-y" id="manage-projects-list" style="max-height: 180px; display: flex; flex-direction: column; gap: 8px;">
                     <!-- Projects injected dynamically -->
                 </div>
+
+                <!-- Data Backup & Portability Section -->
+                <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Data Backup & Portability</h4>
+                <div style="display: flex; gap: 12px; margin-top: 4px;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-export-backup" style="flex: 1; justify-content: center; height: 34px;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 6px;">download</span>
+                        <span>Export Backup</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-import-backup-trigger" style="flex: 1; justify-content: center; height: 34px;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 6px;">upload</span>
+                        <span>Import Backup</span>
+                    </button>
+                    <input type="file" id="import-backup-file-input" accept=".json" class="hidden">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette Overlay -->
+    <div class="modal-backdrop hidden" id="command-palette-modal" style="align-items: flex-start; padding-top: 15vh;">
+        <div class="command-palette glass">
+            <div class="command-palette-search">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <input type="text" id="command-palette-input" placeholder="Type a command or search tasks..." autocomplete="off">
+                <span class="esc-badge">ESC</span>
+            </div>
+            <div class="command-palette-results scrollable-y" id="command-palette-results">
+                <!-- Injected dynamically -->
             </div>
         </div>
     </div>

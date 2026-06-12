@@ -4,7 +4,7 @@
 import { store, getRelativeDate } from './store.js';
 import { initDashboard } from './dashboard.js';
 import { initKanban } from './kanban.js';
-import { initTable } from './table.js';
+import { initTable, exportTableToCSV } from './table.js';
 import { initCalendar, downloadICS, getGoogleCalendarLink } from './calendar.js';
 import { initNotifications } from './notifications.js';
 import { parseExcelFile, importTasksToStore } from './importer.js';
@@ -85,6 +85,56 @@ function initializeApplication() {
     setupUpdatesGenerator();
     setupImporterHandlers();
     setupProjectsManagerHandlers();
+
+    // Wire up premium backup/restore and CSV export features
+    const btnExportTable = document.getElementById('btn-export-table');
+    if (btnExportTable) {
+        btnExportTable.addEventListener('click', () => {
+            exportTableToCSV();
+        });
+    }
+
+    const btnExportBackup = document.getElementById('btn-export-backup');
+    if (btnExportBackup) {
+        btnExportBackup.addEventListener('click', () => {
+            const backupStr = store.exportFullBackup();
+            const blob = new Blob([backupStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `salesflow_backup_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+
+    const btnImportTrigger = document.getElementById('btn-import-backup-trigger');
+    const inputImportFile = document.getElementById('import-backup-file-input');
+    if (btnImportTrigger && inputImportFile) {
+        btnImportTrigger.addEventListener('click', () => {
+            inputImportFile.click();
+        });
+        inputImportFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const success = store.importFullBackup(evt.target.result);
+                    if (success) {
+                        alert('Database restored successfully! Reloading...');
+                        location.reload();
+                    } else {
+                        alert('Invalid backup file. Please select a valid SalesFlow backup JSON file.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+    }
+
+    setupCommandPalette();
 
     // Initialize reset button
     const resetBtn = document.getElementById('btn-reset-app');
@@ -944,4 +994,197 @@ function setupProjectsManagerHandlers() {
 
     // Run initial population
     populateProjectDropdowns();
+}
+
+function setupCommandPalette() {
+    const modal = document.getElementById('command-palette-modal');
+    const input = document.getElementById('command-palette-input');
+    const resultsContainer = document.getElementById('command-palette-results');
+    
+    if (!modal || !input || !resultsContainer) return;
+
+    let isOpen = false;
+    let items = []; // Holds current filtered items list
+    let activeIndex = 0;
+
+    // Global keys
+    window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (isOpen) {
+                closePalette();
+            } else {
+                openPalette();
+            }
+        }
+        if (e.key === 'Escape' && isOpen) {
+            closePalette();
+        }
+    });
+
+    function openPalette() {
+        isOpen = true;
+        modal.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        activeIndex = 0;
+        renderResults();
+    }
+
+    function closePalette() {
+        isOpen = false;
+        modal.classList.add('hidden');
+    }
+
+    // Close when clicking outside palette box
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closePalette();
+        }
+    });
+
+    // Search filter input
+    input.addEventListener('input', () => {
+        activeIndex = 0;
+        renderResults();
+    });
+
+    // Arrow navigation keys
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = (activeIndex + 1) % items.length;
+            updateActiveHighlight();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = (activeIndex - 1 + items.length) % items.length;
+            updateActiveHighlight();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (items[activeIndex]) {
+                executeItem(items[activeIndex]);
+            }
+        }
+    });
+
+    function renderResults() {
+        const query = input.value.trim().toLowerCase();
+        items = getFilteredItems(query);
+
+        if (items.length === 0) {
+            resultsContainer.innerHTML = `<div class="empty-state" style="padding: 16px;">No results found for "${input.value}"</div>`;
+            return;
+        }
+
+        // Group items by type (Commands vs Tasks)
+        let html = '';
+        let currentType = '';
+
+        items.forEach((item, index) => {
+            if (item.typeGroup !== currentType) {
+                currentType = item.typeGroup;
+                html += `<div class="palette-group-title">${currentType}</div>`;
+            }
+
+            const isActive = index === activeIndex ? 'active' : '';
+            html += `
+                <div class="palette-item ${isActive}" data-index="${index}">
+                    <span class="material-symbols-outlined item-icon">${item.icon}</span>
+                    <div class="item-info">
+                        <span class="item-title">${item.title}</span>
+                        ${item.meta ? `<span class="item-meta">${item.meta}</span>` : ''}
+                    </div>
+                    ${item.badge ? `<span class="item-badge">${item.badge}</span>` : ''}
+                </div>
+            `;
+        });
+
+        resultsContainer.innerHTML = html;
+
+        // Item click handlers
+        resultsContainer.querySelectorAll('.palette-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const index = parseInt(el.dataset.index);
+                if (items[index]) {
+                    executeItem(items[index]);
+                }
+            });
+        });
+    }
+
+    function updateActiveHighlight() {
+        resultsContainer.querySelectorAll('.palette-item').forEach((el, index) => {
+            if (index === activeIndex) {
+                el.classList.add('active');
+                el.scrollIntoView({ block: 'nearest' });
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    }
+
+    function getFilteredItems(query) {
+        const commands = [
+            { title: 'Navigate: Dashboard', icon: 'dashboard', typeGroup: 'Commands', badge: 'Go', action: () => navigateToView('dashboard') },
+            { title: 'Navigate: Kanban Board', icon: 'view_kanban', typeGroup: 'Commands', badge: 'Go', action: () => navigateToView('board') },
+            { title: 'Navigate: List / Table', icon: 'table_chart', typeGroup: 'Commands', badge: 'Go', action: () => navigateToView('table') },
+            { title: 'Navigate: Calendar', icon: 'calendar_today', typeGroup: 'Commands', badge: 'Go', action: () => navigateToView('calendar') },
+            { title: 'Navigate: Update Center', icon: 'history_edu', typeGroup: 'Commands', badge: 'Go', action: () => navigateToView('updates') },
+            { title: 'Action: Create New Task / Lead', icon: 'add', typeGroup: 'Commands', badge: 'New', action: () => { openTaskModal(null); } },
+            { title: 'Action: Manage Project Workspaces', icon: 'settings', typeGroup: 'Commands', badge: 'Config', action: () => { document.getElementById('projects-modal').classList.remove('hidden'); renderManageProjectsList(); } }
+        ];
+
+        const tasks = store.getAllTasks().map(t => {
+            const proj = store.getProjectById(t.projectType);
+            const projLabel = proj ? proj.name : t.projectType;
+            return {
+                title: t.title,
+                icon: 'assignment',
+                typeGroup: 'Tasks',
+                meta: `Project: ${projLabel} | Status: ${t.status.toUpperCase()} | Assigned to: ${t.assignedTo || 'Self'}`,
+                action: () => { openTaskModal(t.id); }
+            };
+        });
+
+        const allItems = [...commands, ...tasks];
+
+        if (!query) return allItems;
+
+        return allItems.filter(item => {
+            const titleMatch = item.title.toLowerCase().includes(query);
+            const metaMatch = item.meta && item.meta.toLowerCase().includes(query);
+            return titleMatch || metaMatch;
+        });
+    }
+
+    function executeItem(item) {
+        closePalette();
+        if (typeof item.action === 'function') {
+            item.action();
+        }
+    }
+
+    function navigateToView(viewName) {
+        const navItems = document.querySelectorAll('.nav-item');
+        const panels = document.querySelectorAll('.view-panel');
+        
+        navItems.forEach(item => {
+            if (item.dataset.view === viewName) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        
+        panels.forEach(p => {
+            if (p.id === `view-${viewName}`) {
+                p.classList.add('active');
+            } else {
+                p.classList.remove('active');
+            }
+        });
+
+        // Force re-renders
+        window.dispatchEvent(new CustomEvent('store-updated'));
+    }
 }
