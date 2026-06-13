@@ -1540,7 +1540,6 @@ function renderStoryTimeline(history) {
             });
         }
     }
-}
 
 async function triggerGoogleCalendarSync(taskData, type = 'google') {
     const followupDate = taskData.followupDate || taskData.bniDeadline || taskData.deadline;
