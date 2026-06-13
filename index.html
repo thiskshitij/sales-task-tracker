@@ -120,6 +120,9 @@
             <!-- Top Header -->
             <header class="top-header">
                 <div class="header-left">
+                    <button class="btn btn-outline btn-icon btn-menu-toggle" id="btn-menu-toggle" title="Toggle Navigation Menu" style="display: none; height: 34px; width: 34px; border-radius: 50%; align-items: center; justify-content: center; cursor: pointer; background: transparent; border: 1px solid var(--border-main); padding: 0; margin-right: 8px;">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">menu</span>
+                    </button>
                     <div class="project-selector-wrapper">
                         <span class="material-symbols-outlined filter-icon">filter_alt</span>
                         <select id="global-project-filter">
@@ -798,6 +801,9 @@
             <div style="font-size: 11px; color: var(--text-muted);">Preparing your Google Calendar event</div>
         </div>
     </div>
+
+    <!-- Sidebar Backdrop for Mobile Drawer -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 999; display: none; backdrop-filter: blur(2px);"></div>
 
     <!-- Application Script Bootstrapper -->
     <script type="module" src="js/app.js"></script>

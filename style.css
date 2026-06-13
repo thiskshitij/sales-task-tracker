@@ -2021,4 +2021,201 @@ body.dark-theme .kanban-task-count {
     color: var(--text-muted);
 }
 
+/* ==========================================
+   Mobile Responsiveness (Google Pixel 8 & general mobile)
+   ========================================== */
+@media (max-width: 768px) {
+    /* Main Layout */
+    .app-container {
+        grid-template-columns: 1fr !important;
+        position: relative;
+    }
+
+    /* Sidebar (off-canvas drawer) */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 260px !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    /* Sidebar Backdrop */
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+        display: none;
+        backdrop-filter: blur(2px);
+    }
+
+    .sidebar-backdrop.active {
+        display: block !important;
+    }
+
+    /* Top Header Adjustments */
+    .top-header {
+        padding: 0 12px !important;
+        height: 56px !important;
+        gap: 8px !important;
+    }
+
+    .btn-menu-toggle {
+        display: flex !important; /* Make hamburger menu button visible on mobile */
+    }
+
+    /* Hide Search Center on mobile */
+    .header-center {
+        display: none !important;
+    }
+
+    .header-right {
+        gap: 8px !important;
+    }
+
+    /* Hide "Import Excel" text, just show icon */
+    .header-right #btn-open-import span:not(.material-symbols-outlined) {
+        display: none !important;
+    }
+    .header-right #btn-open-import {
+        padding: 6px !important;
+        border-radius: 50% !important;
+        width: 34px !important;
+        height: 34px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Hide Sync Status Pill Text, just show the status dot */
+    .sync-status-indicator {
+        padding: 6px !important;
+        border-radius: 50% !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .sync-status-indicator #sync-status-text {
+        display: none !important;
+    }
+
+    /* View Panel Adjustments */
+    .view-panel {
+        margin: 8px !important;
+        padding: 16px !important;
+        border-radius: 16px !important;
+        height: calc(100vh - 56px - 24px) !important;
+    }
+
+    /* Dashboard grids */
+    .analytics-grid-row {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        overflow-y: auto;
+    }
+
+    .dashboard-bottom-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .chart-card {
+        height: 280px !important;
+    }
+
+    .flex-card {
+        height: 320px !important;
+    }
+
+    /* Task Modals */
+    .modal-backdrop {
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 10px !important;
+    }
+
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 90vh !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        animation: fadeIn 0.2s ease !important;
+    }
+
+    .form-row-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* Kanban Board Columns */
+    .kanban-wrapper {
+        padding-bottom: 8px !important;
+    }
+    .kanban-column {
+        width: 280px !important;
+        min-width: 280px !important;
+    }
+
+    /* List / Table responsiveness */
+    .table-responsive-container {
+        border-radius: 12px !important;
+        max-height: calc(100vh - 180px) !important;
+    }
+    .data-table th, .data-table td {
+        padding: 8px 10px !important;
+        font-size: 11.5px !important;
+    }
+
+    /* Calendar responsiveness */
+    .calendar-layout {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto 1fr;
+        gap: 16px !important;
+    }
+    .calendar-sidebar {
+        max-height: 200px !important;
+        padding: 12px !important;
+    }
+    .calendar-main {
+        padding: 12px !important;
+    }
+    .calendar-grid-header {
+        font-size: 11px !important;
+    }
+    .calendar-day-num {
+        font-size: 10px !important;
+    }
+    .calendar-event {
+        font-size: 8px !important;
+        padding: 2px !important;
+    }
+
+    /* Update Center responsiveness */
+    .updates-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .updates-controls {
+        padding: 12px !important;
+    }
+    .updates-output-container {
+        padding: 12px !important;
+    }
+}
+
 
