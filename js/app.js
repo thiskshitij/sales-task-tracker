@@ -140,7 +140,7 @@ function setupAuthentication() {
                 const p = passwordInput.value.trim();
                 
                 // Door credentials
-                if (u === 'admin' && p === 'salesflow2026') {
+                if (u === 'admin' && p === 'admin') {
                     sessionStorage.setItem('salesflow_auth', 'true');
                     if (loginError) loginError.classList.add('hidden');
                     // Reset fields
