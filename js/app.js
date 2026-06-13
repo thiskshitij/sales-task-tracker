@@ -466,6 +466,8 @@ export function openTaskModal(taskId = null) {
     form.reset();
     document.getElementById('task-id').value = '';
     document.getElementById('dependency-details-group').classList.add('hidden');
+    const summaryGroup = document.getElementById('form-ai-summary-group');
+    if (summaryGroup) summaryGroup.classList.add('hidden');
     
     if (taskId) {
         // Edit Mode
@@ -486,6 +488,17 @@ export function openTaskModal(taskId = null) {
         document.getElementById('form-assigned-to').value = task.assignedTo || '';
         document.getElementById('form-followup-date').value = task.followupDate || '';
         document.getElementById('form-description').value = task.description || '';
+
+        // Populate AI Summary if it exists
+        const summaryText = document.getElementById('form-ai-summary-text');
+        if (summaryGroup && summaryText) {
+            if (task.customSummary) {
+                summaryText.textContent = task.customSummary;
+                summaryGroup.classList.remove('hidden');
+            } else {
+                summaryGroup.classList.add('hidden');
+            }
+        }
         
         // Populate dependency
         document.getElementById('form-has-dependency').checked = !!task.hasDependency;
@@ -553,7 +566,7 @@ export function openTaskModal(taskId = null) {
     modal.classList.remove('hidden');
 }
 
-function saveForm() {
+async function saveForm() {
     const projectType = document.getElementById('form-project-type').value;
     const title = document.getElementById('form-task-title').value;
     
@@ -616,12 +629,79 @@ function saveForm() {
         }
     }
 
+    if (openGoogleCal) {
+        const overlay = document.getElementById('ai-loading-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+
+        // Extract client name based on template type
+        const template = project ? project.templateType : taskData.projectType;
+        let clientName = '';
+        if (template === 'digital-marketing') {
+            clientName = taskData.clientName || '';
+        } else if (template === 'nable-attendance') {
+            clientName = taskData.contactPerson || '';
+        } else if (template === 'bni-tasks') {
+            clientName = taskData.bniReferral || '';
+        }
+
+        // Prepare history logs
+        let history = [];
+        if (taskData.id) {
+            const taskObj = store.getTaskById(taskData.id);
+            if (taskObj && taskObj.history) {
+                history = [...taskObj.history];
+            }
+        }
+        if (taskData.progressLog) {
+            const now = new Date();
+            const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            history.push({ timestamp, user: taskData.assignedTo || "You", message: taskData.progressLog });
+        }
+
+        try {
+            const response = await fetch('/api/ai/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: taskData.title || 'Follow up task',
+                    clientName: clientName,
+                    description: taskData.description || '',
+                    history: history
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    taskData.customTitle = data.title;
+                    taskData.customSummary = data.summary;
+                }
+            } else {
+                console.warn("AI summarize response not ok, falling back.");
+            }
+        } catch (err) {
+            console.error("AI summarization failed, using fallback:", err);
+        } finally {
+            if (overlay) overlay.classList.add('hidden');
+        }
+    }
+
     // Save and dispatch updates
-    store.saveTask(taskData);
+    const savedTask = store.saveTask(taskData);
     closeModal();
 
-    if (openGoogleCal) {
-        triggerGoogleCalendarSync(taskData, 'google');
+    // Automatically adjust global project filter to the project area where task is saved,
+    // ensuring the user instantly sees the newly created/updated task in their UI.
+    const globalFilter = document.getElementById('global-project-filter');
+    if (globalFilter && globalFilter.value !== 'all' && globalFilter.value !== taskData.projectType) {
+        globalFilter.value = taskData.projectType;
+        // Trigger re-render to reflect new filter
+        window.dispatchEvent(new CustomEvent('store-updated'));
+    }
+
+    if (openGoogleCal && savedTask) {
+        const url = getGoogleCalendarLink(savedTask);
+        if (url) window.open(url, '_blank');
     }
 }
 

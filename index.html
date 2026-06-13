@@ -584,6 +584,15 @@
                     <textarea id="form-description" class="form-control" rows="3" placeholder="Write core details of the task/deal..."></textarea>
                 </div>
 
+                <!-- AI Event Summary (Populated dynamically) -->
+                <div class="form-group hidden" id="form-ai-summary-group" style="margin-top: 16px;">
+                    <label style="color: var(--color-primary); display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 8px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-primary);">psychology</span>
+                        Gemini AI Event Summary
+                    </label>
+                    <div id="form-ai-summary-text" style="padding: 12px; font-size: 12.5px; background: rgba(66, 133, 244, 0.05); border: 1px dashed rgba(66, 133, 244, 0.25); border-radius: 8px; color: var(--text-main); line-height: 1.55; white-space: pre-wrap;"></div>
+                </div>
+
                 <!-- Quick Progress Log Comment -->
                 <div class="form-group progress-comment-group" id="progress-comment-block">
                     <label for="form-progress-log">Record Progress Log (Appends to Timeline)</label>
