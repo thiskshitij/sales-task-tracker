@@ -307,9 +307,9 @@ class SalesStore {
         
         if (isNew) {
             task = {
-                id: taskData.projectType.substring(0, 3) + "-" + Date.now(),
                 history: [{ timestamp, user: "System", message: "Task captured." }],
-                ...taskData
+                ...taskData,
+                id: taskData.projectType.substring(0, 3) + "-" + Date.now()
             };
             
             // Log details initially

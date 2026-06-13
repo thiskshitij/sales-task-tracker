@@ -585,7 +585,6 @@ async function saveForm() {
     
     // Prepare base task data object
     const taskData = {
-        id: document.getElementById('task-id').value || undefined,
         projectType,
         title,
         status: document.getElementById('form-status').value,
@@ -598,6 +597,11 @@ async function saveForm() {
         dependencyIssue: document.getElementById('form-has-dependency').checked ? document.getElementById('form-dependency-issue').value : '',
         progressLog: document.getElementById('form-progress-log').value.trim()
     };
+
+    const taskId = document.getElementById('task-id').value;
+    if (taskId) {
+        taskData.id = taskId;
+    }
 
     // Clean tags
     const tagsVal = document.getElementById('form-tags').value;
