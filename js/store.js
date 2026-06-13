@@ -26,6 +26,8 @@ class SalesStore {
     constructor() {
         this.tasks = [];
         this.projects = [];
+        this.syncStatus = 'loading';
+        this.isBulkImport = false;
         this.init();
     }
 
@@ -63,6 +65,81 @@ class SalesStore {
             this.projects = [...defaultProjects];
             this.saveToStorage();
         }
+
+        // Trigger background cloud sync
+        this.syncFromCloud();
+
+        // Start periodic sync every 15 seconds
+        setInterval(() => {
+            this.syncFromCloud();
+        }, 15000);
+
+        // Also sync when the page becomes visible / focused
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                this.syncFromCloud();
+            }
+        });
+    }
+
+    updateSyncStatus(status) {
+        this.syncStatus = status;
+        window.dispatchEvent(new CustomEvent('sync-status-changed', { detail: status }));
+    }
+
+    async syncFromCloud() {
+        // Only set status to 'loading' if not already syncing a write request
+        if (this.syncStatus !== 'syncing') {
+            this.updateSyncStatus('loading');
+        }
+        try {
+            const response = await fetch('/api/data');
+            if (!response.ok) throw new Error("Failed to fetch from cloud database");
+            const data = await response.json();
+            
+            if (data && Array.isArray(data.projects) && Array.isArray(data.tasks)) {
+                // Check if data actually changed to avoid unnecessary re-renders
+                const tasksChanged = JSON.stringify(this.tasks) !== JSON.stringify(data.tasks);
+                const projectsChanged = JSON.stringify(this.projects) !== JSON.stringify(data.projects);
+                
+                if (tasksChanged || projectsChanged) {
+                    this.projects = data.projects;
+                    this.tasks = data.tasks;
+                    
+                    // Cache locally
+                    localStorage.setItem('salesflow_tasks_v3', JSON.stringify(this.tasks));
+                    localStorage.setItem('salesflow_projects_v1', JSON.stringify(this.projects));
+                    
+                    // Dispatch event to redraw everything
+                    window.dispatchEvent(new CustomEvent('store-updated'));
+                }
+                
+                this.updateSyncStatus('synced');
+                return true;
+            }
+        } catch (err) {
+            console.error("Cloud sync failed, using offline cache:", err);
+            this.updateSyncStatus('offline');
+        }
+        return false;
+    }
+
+    syncAllToCloud() {
+        this.updateSyncStatus('syncing');
+        const payload = {
+            projects: this.projects,
+            tasks: this.tasks
+        };
+        fetch('/api/sync-full', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(() => this.updateSyncStatus('synced'))
+        .catch(err => {
+            console.error("Failed to sync full database:", err);
+            this.updateSyncStatus('error');
+        });
     }
 
     saveToStorage() {
@@ -82,8 +159,22 @@ class SalesStore {
 
     addProject(name, templateType) {
         const id = 'project-' + Date.now();
-        this.projects.push({ id, name, templateType });
+        const proj = { id, name, templateType };
+        this.projects.push(proj);
         this.saveToStorage();
+
+        this.updateSyncStatus('syncing');
+        fetch('/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(proj)
+        })
+        .then(() => this.updateSyncStatus('synced'))
+        .catch(err => {
+            console.error("Failed to sync project creation:", err);
+            this.updateSyncStatus('error');
+        });
+
         return id;
     }
 
@@ -92,6 +183,19 @@ class SalesStore {
         if (proj) {
             proj.name = newName;
             this.saveToStorage();
+
+            this.updateSyncStatus('syncing');
+            fetch(`/api/projects/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(() => this.updateSyncStatus('synced'))
+            .catch(err => {
+                console.error("Failed to sync project rename:", err);
+                this.updateSyncStatus('error');
+            });
+
             return true;
         }
         return false;
@@ -102,6 +206,17 @@ class SalesStore {
         // Clean up tasks belonging to this project
         this.tasks = this.tasks.filter(t => t.projectType !== id);
         this.saveToStorage();
+
+        this.updateSyncStatus('syncing');
+        fetch(`/api/projects/${id}`, {
+            method: 'DELETE'
+        })
+        .then(() => this.updateSyncStatus('synced'))
+        .catch(err => {
+            console.error("Failed to sync project deletion:", err);
+            this.updateSyncStatus('error');
+        });
+
         return true;
     }
 
@@ -146,6 +261,17 @@ class SalesStore {
         if (index !== -1) {
             this.tasks.splice(index, 1);
             this.saveToStorage();
+
+            this.updateSyncStatus('syncing');
+            fetch(`/api/tasks/${id}`, {
+                method: 'DELETE'
+            })
+            .then(() => this.updateSyncStatus('synced'))
+            .catch(err => {
+                console.error("Failed to sync task deletion:", err);
+                this.updateSyncStatus('error');
+            });
+
             return true;
         }
         return false;
@@ -224,6 +350,21 @@ class SalesStore {
         }
         
         this.saveToStorage();
+
+        if (!this.isBulkImport) {
+            this.updateSyncStatus('syncing');
+            fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            })
+            .then(() => this.updateSyncStatus('synced'))
+            .catch(err => {
+                console.error("Failed to sync task save:", err);
+                this.updateSyncStatus('error');
+            });
+        }
+
         return task;
     }
 
@@ -239,6 +380,7 @@ class SalesStore {
             if (Array.isArray(data)) {
                 this.tasks = data;
                 this.saveToStorage();
+                this.syncAllToCloud();
                 return true;
             }
         } catch (e) {
@@ -266,6 +408,7 @@ class SalesStore {
                 this.projects = payload.projects;
                 this.tasks = payload.tasks;
                 this.saveToStorage();
+                this.syncAllToCloud();
                 return true;
             }
         } catch (e) {

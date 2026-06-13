@@ -3,3 +3,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+salesflow.db
+.env
+__pycache__/
+api/__pycache__/
+node_modules/
+

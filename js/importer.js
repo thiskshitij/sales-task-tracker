@@ -172,10 +172,16 @@ export function parseExcelFile(file, projectType, callback) {
 export function importTasksToStore(tasks) {
     if (!Array.isArray(tasks)) return 0;
     
+    // Set flag in store to disable individual API calls
+    store.isBulkImport = true;
     tasks.forEach(task => {
         // Direct save through store
         store.saveTask(task);
     });
+    store.isBulkImport = false;
+    
+    // Perform a single batch sync of projects + tasks to the cloud database
+    store.syncAllToCloud();
     
     return tasks.length;
 }

@@ -16,7 +16,41 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTimeClock();
     setupAuthentication();
     setupGoogleUIControls();
+    setupSyncStatusIndicator();
 });
+
+function setupSyncStatusIndicator() {
+    const dot = document.getElementById('sync-status-dot');
+    const text = document.getElementById('sync-status-text');
+    
+    if (store && store.syncStatus) {
+        updateUI(store.syncStatus);
+    }
+    
+    window.addEventListener('sync-status-changed', (e) => {
+        updateUI(e.detail);
+    });
+    
+    function updateUI(status) {
+        if (!dot || !text) return;
+        if (status === 'synced') {
+            dot.style.background = '#34a853';
+            text.textContent = 'Synced';
+        } else if (status === 'syncing') {
+            dot.style.background = '#fbbc05';
+            text.textContent = 'Syncing...';
+        } else if (status === 'loading') {
+            dot.style.background = '#4285f4';
+            text.textContent = 'Loading...';
+        } else if (status === 'offline') {
+            dot.style.background = '#ea4335';
+            text.textContent = 'Offline';
+        } else if (status === 'error') {
+            dot.style.background = '#ea4335';
+            text.textContent = 'Sync Error';
+        }
+    }
+}
 
 function restoreGoogleTheme() {
     const savedTheme = localStorage.getItem('salesflow_theme') || 'light';
