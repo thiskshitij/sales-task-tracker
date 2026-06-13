@@ -199,7 +199,14 @@ function createTaskCard(task) {
 function setupDropZone(container) {
     container.addEventListener('dragover', (e) => {
         e.preventDefault();
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'move';
+        }
         container.style.background = 'rgba(0, 0, 0, 0.05)';
+    });
+
+    container.addEventListener('dragenter', (e) => {
+        e.preventDefault();
     });
 
     container.addEventListener('dragleave', () => {
