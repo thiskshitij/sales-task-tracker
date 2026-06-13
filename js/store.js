@@ -39,6 +39,10 @@ class SalesStore {
                 if (!Array.isArray(this.tasks)) {
                     throw new Error("Tasks must be an array");
                 }
+                // Normalize any pending statuses to not-started
+                this.tasks.forEach(t => {
+                    if (t.status === 'pending') t.status = 'not-started';
+                });
             } catch (e) {
                 console.error("Failed to parse stored tasks, resetting...", e);
                 this.tasks = [...defaultTasks];
@@ -108,6 +112,10 @@ class SalesStore {
             }
             
             if (data && Array.isArray(data.projects) && Array.isArray(data.tasks)) {
+                // Normalize any pending statuses to not-started
+                data.tasks.forEach(t => {
+                    if (t.status === 'pending') t.status = 'not-started';
+                });
                 // Check if data actually changed to avoid unnecessary re-renders
                 const tasksChanged = JSON.stringify(this.tasks) !== JSON.stringify(data.tasks);
                 const projectsChanged = JSON.stringify(this.projects) !== JSON.stringify(data.projects);
@@ -288,6 +296,9 @@ class SalesStore {
     }
 
     saveTask(taskData) {
+        if (taskData.status === 'pending') {
+            taskData.status = 'not-started';
+        }
         const isNew = !taskData.id;
         const now = new Date();
         const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
