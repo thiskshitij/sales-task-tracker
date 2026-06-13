@@ -17,7 +17,7 @@
 </head>
 <body>
     <!-- Login Screen -->
-    <div class="login-wrapper" id="login-screen">
+    <div class="login-wrapper hidden" id="login-screen">
         <div class="google-login-card">
             <div class="google-login-header">
                 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px;">
@@ -52,7 +52,7 @@
         </div>
     </div>
 
-    <div class="app-container hidden">
+    <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="brand">
@@ -177,7 +177,7 @@
                                 <span class="material-symbols-outlined" style="font-size: 18px;">delete_forever</span>
                                 <span>Reset Tracker Data</span>
                             </button>
-                            <button class="popover-btn logout" id="btn-logout-app" style="display: flex; align-items: center; gap: 10px; padding: 10px; width: 100%; border: none; background: transparent; text-align: left; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-size: 13px; font-weight: 500; border-top: 1px solid var(--border-main); padding-top: 14px; margin-top: 4px;">
+                            <button class="popover-btn logout" id="btn-logout-app" style="display: none; align-items: center; gap: 10px; padding: 10px; width: 100%; border: none; background: transparent; text-align: left; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-size: 13px; font-weight: 500; border-top: 1px solid var(--border-main); padding-top: 14px; margin-top: 4px;">
                                 <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
                                 <span>Sign Out</span>
                             </button>

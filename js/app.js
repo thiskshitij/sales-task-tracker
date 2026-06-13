@@ -111,12 +111,8 @@ function setupAuthentication() {
     const loginError = document.getElementById('login-error');
     const logoutBtn = document.getElementById('btn-logout-app');
 
-    // Check existing session
-    if (sessionStorage.getItem('salesflow_auth') === 'true') {
-        showApp();
-    } else {
-        showLogin();
-    }
+    // Always show the app directly, bypassing the login screen
+    showApp();
 
     function showApp() {
         if (loginScreen) loginScreen.classList.add('hidden');
