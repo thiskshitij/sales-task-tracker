@@ -9,10 +9,66 @@ import { initCalendar, downloadICS, getGoogleCalendarLink } from './calendar.js'
 import { initNotifications } from './notifications.js';
 import { parseExcelFile, importTasksToStore } from './importer.js';
 
+// Run theme restore immediately to prevent white/dark flashes
+restoreGoogleTheme();
+
 document.addEventListener('DOMContentLoaded', () => {
     setupTimeClock();
     setupAuthentication();
+    setupGoogleUIControls();
 });
+
+function restoreGoogleTheme() {
+    const savedTheme = localStorage.getItem('salesflow_theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+    } else {
+        document.body.classList.remove('dark-theme');
+    }
+}
+
+function setupGoogleUIControls() {
+    const themeBtn = document.getElementById('btn-toggle-theme');
+    if (themeBtn) {
+        const icon = themeBtn.querySelector('.material-symbols-outlined');
+        if (icon) {
+            icon.textContent = document.body.classList.contains('dark-theme') ? 'light_mode' : 'dark_mode';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-theme');
+            localStorage.setItem('salesflow_theme', isDark ? 'dark' : 'light');
+            if (icon) {
+                icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+            }
+            // Trigger charts re-render to pick up dark colors if applicable
+            window.dispatchEvent(new CustomEvent('store-updated'));
+        });
+    }
+
+    const avatarBtn = document.getElementById('btn-profile-avatar');
+    const popover = document.getElementById('profile-popover');
+    if (avatarBtn && popover) {
+        avatarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            popover.classList.toggle('hidden');
+        });
+
+        popover.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', () => {
+            popover.classList.add('hidden');
+        });
+
+        popover.querySelectorAll('.popover-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                popover.classList.add('hidden');
+            });
+        });
+    }
+}
 
 function setupAuthentication() {
     const loginScreen = document.getElementById('login-screen');
