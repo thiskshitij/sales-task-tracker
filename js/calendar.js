@@ -186,19 +186,21 @@ export function downloadICS(task) {
     if (!dateStr) return;
 
     // Build title based on daily summary and point of action
-    let eventTitle = `Follow-up: ${task.title}`;
-    if (task.latestLog) {
-        eventTitle += ` - ${task.latestLog}`;
-    }
-    if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
-        eventTitle += ` (Action: ${task.pointOfAction})`;
+    let eventTitle = task.customTitle || `Follow-up: ${task.title}`;
+    if (!task.customTitle) {
+        if (task.latestLog) {
+            eventTitle += ` - ${task.latestLog}`;
+        }
+        if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
+            eventTitle += ` (Action: ${task.pointOfAction})`;
+        }
     }
 
     if (eventTitle.length > 200) {
         eventTitle = eventTitle.substring(0, 197) + '...';
     }
 
-    const desc = task.description || '';
+    const desc = task.customSummary || task.description || '';
 
     // Convert YYYY-MM-DD to YYYYMMDD
     const datePart = dateStr.replace(/-/g, '');
@@ -236,19 +238,21 @@ export function getGoogleCalendarLink(task) {
     if (!dateStr) return '';
 
     // Build title based on daily summary and point of action
-    let eventTitle = `Follow-up: ${task.title}`;
-    if (task.latestLog) {
-        eventTitle += ` - ${task.latestLog}`;
-    }
-    if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
-        eventTitle += ` (Action: ${task.pointOfAction})`;
+    let eventTitle = task.customTitle || `Follow-up: ${task.title}`;
+    if (!task.customTitle) {
+        if (task.latestLog) {
+            eventTitle += ` - ${task.latestLog}`;
+        }
+        if (task.pointOfAction && task.pointOfAction !== 'Follow-up') {
+            eventTitle += ` (Action: ${task.pointOfAction})`;
+        }
     }
 
     if (eventTitle.length > 200) {
         eventTitle = eventTitle.substring(0, 197) + '...';
     }
 
-    const desc = task.description || '';
+    const desc = task.customSummary || task.description || '';
 
     // Convert YYYY-MM-DD to YYYYMMDD
     const datePart = dateStr.replace(/-/g, '');

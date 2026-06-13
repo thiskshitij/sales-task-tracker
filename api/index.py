@@ -310,6 +310,106 @@ def sync_full():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# AI TASK & COMMENTS SUMMARIZER (Gemini API / Heuristic Fallback)
+@app.route('/api/ai/summarize', methods=['POST'])
+def ai_summarize():
+    try:
+        body = request.json or {}
+        title = body.get('title', 'Untitled Task')
+        client_name = body.get('clientName', '')
+        description = body.get('description', '')
+        history = body.get('history', [])
+        
+        # Build client label
+        client_label = client_name.strip()
+        
+        # Generate the Title in format: Title / Client Name
+        full_title = title
+        if client_label:
+            full_title = f"{title} / {client_label}"
+            
+        # Format the history events
+        history_str = ""
+        if isinstance(history, list):
+            for event in history:
+                msg = event.get('message', '')
+                user = event.get('user', 'You')
+                ts = event.get('timestamp', '')
+                if msg:
+                    history_str += f"- [{ts}] {user}: {msg}\n"
+                    
+        # Check if GEMINI_API_KEY is available
+        api_key = os.environ.get('GEMINI_API_KEY')
+        ai_summary = ""
+        
+        if api_key:
+            import urllib.request
+            
+            prompt = (
+                "You are an AI assistant built into a CRM. Summarize the following task details "
+                "and its history log into a concise event description suitable for a Google Calendar event. "
+                "Keep it brief (max 3-4 bullet points), professional, and highlight the most recent updates, "
+                "next action details, and pending blockers. Do NOT add any preamble like 'Here is the summary' or "
+                "markdown code blocks, just output the plain text description.\n\n"
+                f"Task Title: {title}\n"
+                f"Client Name: {client_label}\n"
+                f"Main Description: {description}\n"
+                f"History / Comments:\n{history_str}"
+            )
+            
+            payload = {
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }]
+            }
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            req_data = json.dumps(payload).encode('utf-8')
+            
+            req = urllib.request.Request(
+                url, 
+                data=req_data, 
+                headers={'Content-Type': 'application/json'},
+                method='POST'
+            )
+            
+            try:
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_body = response.read().decode('utf-8')
+                    res_json = json.loads(res_body)
+                    candidates = res_json.get('candidates', [])
+                    if candidates:
+                        parts = candidates[0].get('content', {}).get('parts', [])
+                        if parts:
+                            ai_summary = parts[0].get('text', '').strip()
+            except Exception as e:
+                print("Gemini API call failed:", e)
+                
+        # If API key is missing or call failed, use a high-quality heuristic local summarizer
+        if not ai_summary:
+            ai_summary = "Task details:\n"
+            if description.strip():
+                ai_summary += f"- Main details: {description.strip()}\n"
+            else:
+                ai_summary += "- No main description details provided.\n"
+                
+            if history_str:
+                ai_summary += "\nRecent Updates:\n"
+                recent_logs = history[-3:] if isinstance(history, list) else []
+                for event in recent_logs:
+                    msg = event.get('message', '')
+                    if msg:
+                        ai_summary += f"- {msg}\n"
+                        
+        return jsonify({
+            "success": True,
+            "title": full_title,
+            "summary": ai_summary
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # STATIC FRONTEND FALLBACKS
 @app.route('/')
 def index():

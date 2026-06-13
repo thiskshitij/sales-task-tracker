@@ -370,41 +370,31 @@ function setupModalHandlers() {
     if (icsBtn) {
         icsBtn.addEventListener('click', () => {
             const taskId = document.getElementById('task-id').value;
+            const projectType = document.getElementById('form-project-type').value;
             const title = document.getElementById('form-task-title').value;
             const desc = document.getElementById('form-description').value;
             const followupDate = document.getElementById('form-followup-date').value;
+            const assignedTo = document.getElementById('form-assigned-to')?.value || 'Self';
 
-            if (!followupDate) {
-                alert('Please select a Follow-up Date first to generate a Calendar Event.');
-                return;
-            }
+            const taskData = {
+                id: taskId,
+                projectType,
+                title,
+                description: desc,
+                followupDate,
+                assignedTo
+            };
 
-            // Extract daily summary and point of action
-            const typedLog = document.getElementById('form-progress-log').value.trim();
-            let latestLog = '';
-            if (taskId) {
-                const taskObj = store.getTaskById(taskId);
-                if (taskObj && taskObj.history && taskObj.history.length > 0) {
-                    const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
-                    if (logs.length > 0) {
-                        latestLog = logs[logs.length - 1].message;
-                    }
-                }
-            }
-            const latestLogVal = typedLog || latestLog || desc || '';
+            const dmNextAction = document.getElementById('dm-next-action')?.value || '';
+            const nableContact = document.getElementById('nable-contact')?.value || '';
+            const bniReferral = document.getElementById('bni-referral')?.value || '';
 
-            const dmNextAction = document.getElementById('dm-next-action');
-            const pointOfAction = (dmNextAction && dmNextAction.value.trim()) || 'Follow-up';
+            taskData.clientName = document.getElementById('dm-client')?.value || '';
+            taskData.contactPerson = nableContact;
+            taskData.bniReferral = bniReferral;
+            taskData.nextAction = dmNextAction;
 
-            // Standardize temporary task object to pass to exporter
-            downloadICS({
-                id: taskId || 'new',
-                title: title || 'Follow up task',
-                description: desc || '',
-                followupDate: followupDate,
-                latestLog: latestLogVal,
-                pointOfAction: pointOfAction
-            });
+            triggerGoogleCalendarSync(taskData, 'ics');
         });
     }
 
@@ -412,43 +402,31 @@ function setupModalHandlers() {
     if (googleCalBtn) {
         googleCalBtn.addEventListener('click', () => {
             const taskId = document.getElementById('task-id').value;
+            const projectType = document.getElementById('form-project-type').value;
             const title = document.getElementById('form-task-title').value;
             const desc = document.getElementById('form-description').value;
             const followupDate = document.getElementById('form-followup-date').value;
+            const assignedTo = document.getElementById('form-assigned-to')?.value || 'Self';
 
-            if (!followupDate) {
-                alert('Please select a Follow-up Date first to generate a Calendar Event.');
-                return;
-            }
+            const taskData = {
+                id: taskId,
+                projectType,
+                title,
+                description: desc,
+                followupDate,
+                assignedTo
+            };
 
-            // Extract daily summary and point of action
-            const typedLog = document.getElementById('form-progress-log').value.trim();
-            let latestLog = '';
-            if (taskId) {
-                const taskObj = store.getTaskById(taskId);
-                if (taskObj && taskObj.history && taskObj.history.length > 0) {
-                    const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
-                    if (logs.length > 0) {
-                        latestLog = logs[logs.length - 1].message;
-                    }
-                }
-            }
-            const latestLogVal = typedLog || latestLog || desc || '';
+            const dmNextAction = document.getElementById('dm-next-action')?.value || '';
+            const nableContact = document.getElementById('nable-contact')?.value || '';
+            const bniReferral = document.getElementById('bni-referral')?.value || '';
 
-            const dmNextAction = document.getElementById('dm-next-action');
-            const pointOfAction = (dmNextAction && dmNextAction.value.trim()) || 'Follow-up';
+            taskData.clientName = document.getElementById('dm-client')?.value || '';
+            taskData.contactPerson = nableContact;
+            taskData.bniReferral = bniReferral;
+            taskData.nextAction = dmNextAction;
 
-            const url = getGoogleCalendarLink({
-                id: taskId || 'new',
-                title: title || 'Follow up task',
-                description: desc || '',
-                followupDate: followupDate,
-                latestLog: latestLogVal,
-                pointOfAction: pointOfAction
-            });
-            if (url) {
-                window.open(url, '_blank');
-            }
+            triggerGoogleCalendarSync(taskData, 'google');
         });
     }
 }
@@ -647,31 +625,7 @@ function saveForm() {
     closeModal();
 
     if (openGoogleCal) {
-        const typedLog = taskData.progressLog;
-        let latestLog = '';
-        if (taskData.id) {
-            const taskObj = store.getTaskById(taskData.id);
-            if (taskObj && taskObj.history && taskObj.history.length > 0) {
-                const logs = taskObj.history.filter(h => !h.message.includes('initialized') && !h.message.includes('captured'));
-                if (logs.length > 0) {
-                    latestLog = logs[logs.length - 1].message;
-                }
-            }
-        }
-        const latestLogVal = typedLog || latestLog || taskData.description || '';
-        const pointOfAction = taskData.nextAction || 'Follow-up';
-
-        const url = getGoogleCalendarLink({
-            id: taskData.id || 'new',
-            title: taskData.title || 'Follow up task',
-            description: taskData.description || '',
-            followupDate: taskData.followupDate,
-            latestLog: latestLogVal,
-            pointOfAction: pointOfAction
-        });
-        if (url) {
-            window.open(url, '_blank');
-        }
+        triggerGoogleCalendarSync(taskData, 'google');
     }
 }
 
@@ -1578,21 +1532,87 @@ function renderStoryTimeline(history) {
                             store.saveTask(updatedData);
                             renderWhatsOnPlate();
 
-                            // Trigger Google Calendar redirect for the rescheduled date
-                            const url = getGoogleCalendarLink({
-                                id: updatedData.id,
-                                title: updatedData.title || 'Follow up task',
-                                description: updatedData.description || '',
-                                followupDate: updatedData.followupDate || updatedData.bniDeadline || updatedData.deadline,
-                                latestLog: updatedData.progressLog,
-                                pointOfAction: updatedData.nextAction || 'Follow-up'
-                            });
-                            if (url) {
-                                window.open(url, '_blank');
-                            }
+                            // Trigger Google Calendar redirect for the rescheduled date with AI Summary
+                            triggerGoogleCalendarSync(updatedData, 'google');
                         }
                     });
                 }
             });
         }
     }
+}
+
+async function triggerGoogleCalendarSync(taskData, type = 'google') {
+    const followupDate = taskData.followupDate || taskData.bniDeadline || taskData.deadline;
+    if (!followupDate) {
+        alert('Please select a Follow-up Date first to generate a Calendar Event.');
+        return;
+    }
+
+    const overlay = document.getElementById('ai-loading-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+
+    // Extract client name based on template type
+    const project = store.getProjectById(taskData.projectType);
+    const template = project ? project.templateType : taskData.projectType;
+    let clientName = '';
+    if (template === 'digital-marketing') {
+        clientName = taskData.clientName || '';
+    } else if (template === 'nable-attendance') {
+        clientName = taskData.contactPerson || '';
+    } else if (template === 'bni-tasks') {
+        clientName = taskData.bniReferral || '';
+    }
+
+    // Prepare history logs
+    let history = [];
+    if (taskData.id) {
+        const taskObj = store.getTaskById(taskData.id);
+        if (taskObj && taskObj.history) {
+            history = [...taskObj.history];
+        }
+    }
+    const typedLog = document.getElementById('form-progress-log')?.value.trim();
+    if (typedLog) {
+        const now = new Date();
+        const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        history.push({ timestamp, user: taskData.assignedTo || "You", message: typedLog });
+    }
+
+    try {
+        const response = await fetch('/api/ai/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: taskData.title || 'Follow up task',
+                clientName: clientName,
+                description: taskData.description || '',
+                history: history
+            })
+        });
+
+        if (!response.ok) throw new Error("AI summarizing failed");
+        
+        const data = await response.json();
+        if (data.success) {
+            taskData.customTitle = data.title;
+            taskData.customSummary = data.summary;
+        }
+    } catch (e) {
+        console.error("AI summarization failed, falling back to local text:", e);
+        let localTitle = taskData.title || 'Follow up task';
+        if (clientName) {
+            localTitle += ` / ${clientName}`;
+        }
+        taskData.customTitle = localTitle;
+    } finally {
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    if (type === 'google') {
+        const url = getGoogleCalendarLink(taskData);
+        if (url) window.open(url, '_blank');
+    } else {
+        downloadICS(taskData);
+    }
+}
