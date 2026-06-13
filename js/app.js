@@ -1157,6 +1157,7 @@ function setupProjectsManagerHandlers() {
         if (modal) {
             modal.classList.remove('hidden');
             renderManageProjectsList();
+            fetchDatabaseDiagnostics();
         }
     };
 
@@ -1199,6 +1200,57 @@ function setupProjectsManagerHandlers() {
 
     // Run initial population
     populateProjectDropdowns();
+}
+
+async function fetchDatabaseDiagnostics() {
+    const diagDbMode = document.getElementById('diag-db-mode');
+    const diagDbConnection = document.getElementById('diag-db-connection');
+    const diagDbWrite = document.getElementById('diag-db-write');
+    const diagDbErrorBox = document.getElementById('diag-db-error-box');
+
+    if (!diagDbMode || !diagDbConnection || !diagDbWrite || !diagDbErrorBox) return;
+
+    diagDbMode.textContent = 'Checking...';
+    diagDbConnection.textContent = 'Checking...';
+    diagDbWrite.textContent = 'Checking...';
+    diagDbErrorBox.classList.add('hidden');
+    diagDbErrorBox.textContent = '';
+
+    try {
+        const response = await fetch('/api/diagnostics');
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        const data = await response.json();
+
+        diagDbMode.textContent = data.db_mode || 'Unknown';
+        
+        if (data.connection === 'Success') {
+            diagDbConnection.innerHTML = '<span style="color: #3fb950">🟢 Connected</span>';
+        } else {
+            diagDbConnection.innerHTML = '<span style="color: #f85149">🔴 Failed</span>';
+            diagDbErrorBox.textContent = `Connection error: ${data.connection}`;
+            diagDbErrorBox.classList.remove('hidden');
+        }
+
+        if (data.write_test.startsWith('Success')) {
+            if (data.db_mode === 'SQLite' && data.vercel_environment) {
+                diagDbWrite.innerHTML = '<span style="color: #d49922">⚠️ Writeable (Temporary Vercel Sandbox)</span>';
+                diagDbErrorBox.innerHTML = '⚠️ <strong>SQLite on Vercel is stateless</strong>. Tasks you save will disappear when Vercel recycles server containers. Please configure <code>DATABASE_URL</code> to connect Neon Postgres for permanent storage.';
+                diagDbErrorBox.classList.remove('hidden');
+            } else {
+                diagDbWrite.innerHTML = '<span style="color: #3fb950">🟢 Writeable</span>';
+            }
+        } else {
+            diagDbWrite.innerHTML = '<span style="color: #f85149">🔴 Read-Only / Error</span>';
+            diagDbErrorBox.textContent = `Write error: ${data.write_test}`;
+            diagDbErrorBox.classList.remove('hidden');
+        }
+    } catch (err) {
+        diagDbMode.textContent = 'Unknown';
+        diagDbConnection.innerHTML = '<span style="color: #f85149">🔴 Network Error</span>';
+        diagDbWrite.innerHTML = '<span style="color: #f85149">🔴 Unknown</span>';
+        diagDbErrorBox.textContent = `API request failed: ${err.message}`;
+        diagDbErrorBox.classList.remove('hidden');
+    }
 }
 
 function setupCommandPalette() {

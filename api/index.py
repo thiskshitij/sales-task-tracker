@@ -24,9 +24,18 @@ else:
 
 def get_db_connection():
     if is_postgres:
-        return psycopg2.connect(DATABASE_URL)
+        # Normalize postgres:// to postgresql:// for compatibility with psycopg2
+        url = DATABASE_URL
+        if url.startswith('postgres://'):
+            url = url.replace('postgres://', 'postgresql://', 1)
+        return psycopg2.connect(url)
     else:
-        db_path = os.path.join(ROOT_DIR, 'salesflow.db')
+        # Vercel filesystem is read-only, so use /tmp for SQLite writes
+        if os.environ.get('VERCEL') == '1':
+            db_path = '/tmp/salesflow.db'
+        else:
+            db_path = os.path.join(ROOT_DIR, 'salesflow.db')
+            
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         return conn
@@ -159,6 +168,41 @@ def get_data():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# DATABASE DIAGNOSTICS & HEALTH CHECK
+@app.route('/api/diagnostics', methods=['GET'])
+def get_diagnostics():
+    status = {
+        "db_mode": "PostgreSQL" if is_postgres else "SQLite",
+        "connection": "Unknown",
+        "write_test": "Unknown",
+        "vercel_environment": os.environ.get('VERCEL') == '1',
+        "database_url_configured": bool(os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')),
+        "gemini_api_key_configured": bool(os.environ.get('GEMINI_API_KEY'))
+    }
+    
+    try:
+        conn = get_db_connection()
+        status["connection"] = "Success"
+        cur = conn.cursor()
+        
+        # Test writeability / select counts
+        try:
+            cur.execute("SELECT COUNT(*) FROM projects;")
+            status["projects_count"] = cur.fetchone()[0]
+            
+            cur.execute("SELECT COUNT(*) FROM tasks;")
+            status["tasks_count"] = cur.fetchone()[0]
+            status["write_test"] = "Success (Read verified)"
+        except Exception as write_err:
+            status["write_test"] = f"Failed: {str(write_err)}"
+            
+        cur.close()
+        conn.close()
+    except Exception as conn_err:
+        status["connection"] = f"Failed: {str(conn_err)}"
+        
+    return jsonify(status)
 
 # SAVE NEW PROJECT
 @app.route('/api/projects', methods=['POST'])

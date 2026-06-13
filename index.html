@@ -717,6 +717,24 @@
                     </button>
                     <input type="file" id="import-backup-file-input" accept=".json" class="hidden">
                 </div>
+
+                <!-- Database Diagnostics Section -->
+                <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 18px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">Database Connection Status</h4>
+                <div id="db-diagnostics-card" style="padding: 10px; font-size: 11.5px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-main); display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Database Type:</span>
+                        <strong id="diag-db-mode" style="color: var(--text-main);">Loading...</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Connection:</span>
+                        <strong id="diag-db-connection" style="color: var(--text-main);">Loading...</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Write Permission:</span>
+                        <strong id="diag-db-write" style="color: var(--text-main);">Loading...</strong>
+                    </div>
+                    <div id="diag-db-error-box" class="hidden" style="margin-top: 6px; padding: 6px; font-size: 10px; color: var(--color-danger-text); background: rgba(248,81,73,0.05); border: 1px solid rgba(248,81,73,0.15); border-radius: 4px; word-break: break-word; line-height: 1.4;"></div>
+                </div>
             </div>
         </div>
     </div>
