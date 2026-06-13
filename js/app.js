@@ -632,19 +632,8 @@ async function saveForm() {
         taskData.bniReferral = document.getElementById('bni-referral').value;
     }
 
-    // Check if the follow-up date changed or is new
+    // Check if the follow-up date changed or is new (disabled automatic calendar redirect on save)
     let openGoogleCal = false;
-    const isNew = !taskData.id;
-    if (taskData.followupDate) {
-        if (isNew) {
-            openGoogleCal = true;
-        } else {
-            const existingTask = store.getTaskById(taskData.id);
-            if (existingTask && existingTask.followupDate !== taskData.followupDate) {
-                openGoogleCal = true;
-            }
-        }
-    }
 
     if (openGoogleCal) {
         const overlay = document.getElementById('ai-loading-overlay');
@@ -1677,8 +1666,8 @@ function renderStoryTimeline(history) {
                             store.saveTask(updatedData);
                             renderWhatsOnPlate();
 
-                            // Trigger Google Calendar redirect for the rescheduled date with AI Summary
-                            triggerGoogleCalendarSync(updatedData, 'google');
+                            // Trigger Google Calendar redirect for the rescheduled date with AI Summary (disabled automatically)
+                            // triggerGoogleCalendarSync(updatedData, 'google');
                         }
                     });
                 }
