@@ -1084,15 +1084,24 @@ function renderManageProjectsList() {
 
 function setupProjectsManagerHandlers() {
     const btnManage = document.getElementById('btn-manage-projects');
+    const btnManageHeader = document.getElementById('btn-manage-projects-header');
     const modal = document.getElementById('projects-modal');
     const modalClose = document.getElementById('projects-modal-close');
     const btnAddSubmit = document.getElementById('btn-add-project-submit');
 
-    if (btnManage && modal) {
-        btnManage.addEventListener('click', () => {
+    const openProjectsModal = () => {
+        if (modal) {
             modal.classList.remove('hidden');
             renderManageProjectsList();
-        });
+        }
+    };
+
+    if (btnManage) {
+        btnManage.addEventListener('click', openProjectsModal);
+    }
+
+    if (btnManageHeader) {
+        btnManageHeader.addEventListener('click', openProjectsModal);
     }
 
     if (modalClose && modal) {
