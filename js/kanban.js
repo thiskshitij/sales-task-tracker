@@ -152,9 +152,14 @@ function createTaskCard(task) {
     }
 
     card.innerHTML = `
-        <div class="task-card-header">
-            <span class="task-card-title">${task.title}</span>
-            <span class="badge ${priorityColor}" style="font-size: 8px;">${task.priority}</span>
+        <div class="task-card-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; width: 100%;">
+            <span class="task-card-title" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">${task.title}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span class="badge ${priorityColor}" style="font-size: 8px;">${task.priority}</span>
+                <button class="btn-delete-card-task" data-task-id="${task.id}" title="Delete Task" style="background: transparent; border: none; padding: 2px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: var(--transition-fast);">
+                    <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
+                </button>
+            </div>
         </div>
         <div class="task-card-meta">
             ${metaHTML}
@@ -166,10 +171,22 @@ function createTaskCard(task) {
         </div>
     `;
 
+    // Direct card deletion click handler
+    const deleteBtn = card.querySelector('.btn-delete-card-task');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Block opening the task modal
+            if (confirm(`Are you sure you want to delete this task "${task.title}"?`)) {
+                store.deleteTask(task.id);
+            }
+        });
+    }
+
     // Drag events on card
     card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
         e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.setData('text', task.id);
     });
 
     card.addEventListener('dragend', () => {
@@ -182,17 +199,17 @@ function createTaskCard(task) {
 function setupDropZone(container) {
     container.addEventListener('dragover', (e) => {
         e.preventDefault();
-        container.style.background = 'rgba(255, 255, 255, 0.03)';
+        container.style.background = 'rgba(0, 0, 0, 0.05)';
     });
 
     container.addEventListener('dragleave', () => {
-        container.style.background = 'transparent';
+        container.style.background = '';
     });
 
     container.addEventListener('drop', (e) => {
         e.preventDefault();
-        container.style.background = 'transparent';
-        const taskId = e.dataTransfer.getData('text/plain');
+        container.style.background = '';
+        const taskId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
         const task = store.getTaskById(taskId);
         const newStatus = container.dataset.status;
 

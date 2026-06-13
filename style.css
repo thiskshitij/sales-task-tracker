@@ -922,6 +922,12 @@ body.dark-theme .kanban-task-count {
 .kanban-task-card.dragging {
     opacity: 0.4;
     cursor: grabbing;
+    pointer-events: none;
+}
+
+.btn-delete-card-task:hover {
+    color: var(--color-danger-text) !important;
+    background: var(--color-danger-container) !important;
 }
 
 .task-card-header {
