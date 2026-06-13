@@ -164,7 +164,9 @@ def get_data():
         
         return jsonify({
             "projects": projects,
-            "tasks": tasks
+            "tasks": tasks,
+            "dbMode": "PostgreSQL" if is_postgres else "SQLite",
+            "db_mode": "PostgreSQL" if is_postgres else "SQLite"
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -407,7 +409,7 @@ def ai_summarize():
                 }]
             }
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
             req_data = json.dumps(payload).encode('utf-8')
             
             req = urllib.request.Request(

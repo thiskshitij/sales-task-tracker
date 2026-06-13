@@ -97,6 +97,16 @@ class SalesStore {
             if (!response.ok) throw new Error("Failed to fetch from cloud database");
             const data = await response.json();
             
+            // Safeguard: If deployed on Vercel but falling back to SQLite (stateless sandbox),
+            // local storage is our source of truth. Do not overwrite local tasks with empty server data.
+            const isVercel = window.location.hostname.endsWith('.vercel.app') || window.location.hostname.includes('vercel.app');
+            const isSqlite = data.dbMode === 'SQLite';
+            
+            if (isVercel && isSqlite) {
+                this.updateSyncStatus('sandbox-mode');
+                return false;
+            }
+            
             if (data && Array.isArray(data.projects) && Array.isArray(data.tasks)) {
                 // Check if data actually changed to avoid unnecessary re-renders
                 const tasksChanged = JSON.stringify(this.tasks) !== JSON.stringify(data.tasks);

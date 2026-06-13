@@ -22,7 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupSyncStatusIndicator() {
     const dot = document.getElementById('sync-status-dot');
     const text = document.getElementById('sync-status-text');
+    const container = document.getElementById('sync-status-container');
     
+    if (container) {
+        container.style.cursor = 'pointer';
+        container.title = 'Click to view Database Diagnostics';
+        container.addEventListener('click', () => {
+            const btnManage = document.getElementById('btn-manage-projects');
+            if (btnManage) btnManage.click();
+        });
+    }
+
     if (store && store.syncStatus) {
         updateUI(store.syncStatus);
     }
@@ -48,6 +58,9 @@ function setupSyncStatusIndicator() {
         } else if (status === 'error') {
             dot.style.background = '#ea4335';
             text.textContent = 'Sync Error';
+        } else if (status === 'sandbox-mode') {
+            dot.style.background = '#d49922';
+            text.textContent = 'Sandbox (Local)';
         }
     }
 }
