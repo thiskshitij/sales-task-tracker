@@ -23,10 +23,7 @@ function renderCounters() {
     // Calculations
     const activeTasks = tasks.filter(t => t.status !== 'completed');
     const followupTodayCount = activeTasks.filter(t => t.followupDate && t.followupDate <= todayStr).length;
-    const bniCount = activeTasks.filter(t => {
-        const proj = store.getProjectById(t.projectType);
-        return proj && proj.templateType === 'bni-tasks';
-    }).length;
+    const openTasksCount = activeTasks.length;
     const blockersCount = activeTasks.filter(t => t.hasDependency).length;
     
     // Completion Rate
@@ -58,11 +55,11 @@ function renderCounters() {
         </div>
         <div class="card glass stat-card">
             <div class="stat-card-icon" style="background: rgba(188, 140, 255, 0.1); color: var(--color-purple);">
-                <span class="material-symbols-outlined">groups</span>
+                <span class="material-symbols-outlined">assignment</span>
             </div>
             <div class="stat-card-info">
-                <span class="label">Active BNI Tasks</span>
-                <span class="value">${bniCount}</span>
+                <span class="label">Open Tasks</span>
+                <span class="value">${openTasksCount}</span>
             </div>
         </div>
         <div class="card glass stat-card">
