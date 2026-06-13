@@ -628,6 +628,13 @@ body.dark-theme .view-panel {
     overflow: hidden;
 }
 
+#progress-chart-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    width: 100%;
+}
+
 /* SVG Chart styles */
 .svg-chart {
     width: 100%;

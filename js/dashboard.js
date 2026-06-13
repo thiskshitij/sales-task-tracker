@@ -94,47 +94,70 @@ function renderProgressChart() {
     if (!container) return;
 
     const tasks = store.getAllTasks();
+    const workspaces = store.getProjects();
     
-    // Group status counts by project area
-    const projects = {
-        'digital-marketing': { notStarted: 0, inProgress: 0, completed: 0 },
-        'nable-attendance': { notStarted: 0, inProgress: 0, completed: 0 },
-        'bni-tasks': { notStarted: 0, inProgress: 0, completed: 0 }
-    };
+    // Group status counts by workspace ID
+    const projectsData = {};
+    workspaces.forEach(w => {
+        projectsData[w.id] = {
+            name: w.name,
+            notStarted: 0,
+            inProgress: 0,
+            completed: 0
+        };
+    });
 
     tasks.forEach(t => {
-        const proj = store.getProjectById(t.projectType);
-        const template = proj ? proj.templateType : 'digital-marketing';
-        if (projects[template]) {
+        const projId = t.projectType;
+        if (projectsData[projId]) {
             if (t.status === 'completed') {
-                projects[template].completed++;
+                projectsData[projId].completed++;
             } else if (t.status === 'in-progress') {
-                projects[template].inProgress++;
+                projectsData[projId].inProgress++;
             } else {
-                projects[template].notStarted++;
+                projectsData[projId].notStarted++;
+            }
+        } else {
+            // Legacy/fallback project mapping
+            const fallbackProj = workspaces[0];
+            if (fallbackProj && projectsData[fallbackProj.id]) {
+                if (t.status === 'completed') {
+                    projectsData[fallbackProj.id].completed++;
+                } else if (t.status === 'in-progress') {
+                    projectsData[fallbackProj.id].inProgress++;
+                } else {
+                    projectsData[fallbackProj.id].notStarted++;
+                }
             }
         }
     });
 
-    // Generate responsive SVG Bar Chart
-    const categories = [
-        { key: 'digital-marketing', label: 'DM Projects' },
-        { key: 'nable-attendance', label: 'Nable CRM' },
-        { key: 'bni-tasks', label: 'BNI Tasks' }
-    ];
+    // If there are no workspaces, render a clean empty state
+    if (workspaces.length === 0) {
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 13px; padding-bottom: 24px;">
+                <span class="material-symbols-outlined" style="font-size: 36px; margin-bottom: 8px;">analytics</span>
+                <span>No projects or tasks found</span>
+            </div>
+        `;
+        return;
+    }
 
     let barsHTML = '';
     const maxVal = Math.max(
-        ...categories.map(c => projects[c.key].notStarted + projects[c.key].inProgress + projects[c.key].completed), 
+        ...workspaces.map(w => projectsData[w.id].notStarted + projectsData[w.id].inProgress + projectsData[w.id].completed), 
         3 // Fallback min height scale
     );
     
-    categories.forEach((cat, index) => {
-        const stats = projects[cat.key];
+    // Calculate chart width dynamically. 80px per workspace + margins.
+    const chartWidth = Math.max(450, 60 + workspaces.length * 100);
+
+    workspaces.forEach((w, index) => {
+        const stats = projectsData[w.id];
         const total = stats.notStarted + stats.inProgress + stats.completed;
         
-        // Coordinates
-        const x = 70 + index * 130;
+        // Coordinates: starting at x=50, separated by 100px intervals
+        const x = 50 + index * 100;
         const scale = 160 / maxVal;
         
         // Heights
@@ -147,28 +170,34 @@ function renderProgressChart() {
         const yInProgress = yCompleted - hInProgress;
         const yNotStarted = yInProgress - hNotStarted;
         
+        // Truncate names to prevent chart overlap, show full name on hover via <title>
+        const displayName = w.name.length > 12 ? w.name.substring(0, 10) + '...' : w.name;
+        
         barsHTML += `
             <!-- Grid Line -->
             <line class="chart-grid-line" x1="${x + 20}" y1="40" x2="${x + 20}" y2="200"></line>
             
             <!-- Stacked Bar Groups -->
-            ${stats.completed > 0 ? `<rect class="chart-bar" x="${x}" y="${yCompleted}" width="40" height="${hCompleted}" fill="var(--color-success)"></rect>` : ''}
-            ${stats.inProgress > 0 ? `<rect class="chart-bar" x="${x}" y="${yInProgress}" width="40" height="${hInProgress}" fill="var(--color-primary)"></rect>` : ''}
-            ${stats.notStarted > 0 ? `<rect class="chart-bar" x="${x}" y="${yNotStarted}" width="40" height="${hNotStarted}" fill="var(--text-muted)"></rect>` : ''}
+            <g style="cursor: pointer;">
+                <title>${w.name}: ${stats.completed} Completed, ${stats.inProgress} In Progress, ${stats.notStarted} Pending</title>
+                ${stats.completed > 0 ? `<rect class="chart-bar" x="${x}" y="${yCompleted}" width="40" height="${hCompleted}" fill="var(--color-success)" rx="2"></rect>` : ''}
+                ${stats.inProgress > 0 ? `<rect class="chart-bar" x="${x}" y="${yInProgress}" width="40" height="${hInProgress}" fill="var(--color-primary)" rx="2"></rect>` : ''}
+                ${stats.notStarted > 0 ? `<rect class="chart-bar" x="${x}" y="${yNotStarted}" width="40" height="${hNotStarted}" fill="var(--text-muted)" rx="2"></rect>` : ''}
+            </g>
             
             <!-- Axis label -->
-            <text class="chart-text" x="${x + 20}" y="220" text-anchor="middle">${cat.label}</text>
-            <text class="chart-text" x="${x + 20}" y="${yNotStarted - 6}" text-anchor="middle" font-weight="600" fill="var(--text-main)">${total}</text>
+            <text class="chart-text" x="${x + 20}" y="220" text-anchor="middle" font-size="10" fill="var(--text-muted)">${displayName}</text>
+            <text class="chart-text" x="${x + 20}" y="${yNotStarted - 6}" text-anchor="middle" font-weight="600" fill="var(--text-main)" font-size="11">${total}</text>
         `;
     });
 
     container.innerHTML = `
-        <svg class="svg-chart" viewBox="0 0 450 240">
+        <svg class="svg-chart" viewBox="0 0 ${chartWidth} 240" style="width: ${chartWidth}px; min-width: 100%;">
             <!-- Grid Lines Horizontal -->
-            <line class="chart-grid-line" x1="40" y1="40" x2="430" y2="40"></line>
-            <line class="chart-grid-line" x1="40" y1="93" x2="430" y2="93"></line>
-            <line class="chart-grid-line" x1="40" y1="146" x2="430" y2="146"></line>
-            <line class="chart-grid-line" x1="40" y1="200" x2="430" y2="200"></line>
+            <line class="chart-grid-line" x1="40" y1="40" x2="${chartWidth - 20}" y2="40"></line>
+            <line class="chart-grid-line" x1="40" y1="93" x2="${chartWidth - 20}" y2="93"></line>
+            <line class="chart-grid-line" x1="40" y1="146" x2="${chartWidth - 20}" y2="146"></line>
+            <line class="chart-grid-line" x1="40" y1="200" x2="${chartWidth - 20}" y2="200"></line>
             
             <!-- Y-Axis Scale Values -->
             <text class="chart-text" x="30" y="44" text-anchor="end">${maxVal}</text>
@@ -178,7 +207,7 @@ function renderProgressChart() {
             ${barsHTML}
             
             <!-- X-Axis Line -->
-            <line class="chart-axis" x1="40" y1="200" x2="430" y2="200"></line>
+            <line class="chart-axis" x1="40" y1="200" x2="${chartWidth - 20}" y2="200"></line>
         </svg>
         
         <!-- Interactive Chart Legends -->
